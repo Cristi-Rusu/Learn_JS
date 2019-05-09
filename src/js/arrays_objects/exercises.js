@@ -99,5 +99,17 @@ function listToArrayR( List ) {
     return array;
 }
 
+function nthInList( n, list ) {
+    for ( let i = 0; ; i++) {
+        if (i === n) {
+            return list.value;
+        } else if (list.rest === null) {
+            return undefined;
+        } else {
+            list  = list.rest;
+        }
+    }
+}
+
 // used to test listTOArray() function
 let List = arrayToListR([1, 2, 3, 4, 5]);
