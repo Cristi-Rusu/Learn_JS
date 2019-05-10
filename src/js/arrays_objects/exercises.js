@@ -114,58 +114,94 @@ function nthInList( n, list ) {
 }
 
 // used to test listTOArray() function
-let List = arrayToListR([1, 2, 3, 4, 5]);
+const List = arrayToListR([1, 2, 3, 4, 5]);
 
 const objLength = obj => Object.keys(obj).length;
 const objKeys = obj => Object.keys(obj);
 
-function equalPropNum( object1, object2 ) {
+function equalPropNum( obj1, obj2 ) {
+    const obj1Length = objLength(obj1);
+    const obj2Length = objLength(obj2);
 
-    const checkPropNum = ( obj1, obj2 ) => {
-        const obj1Length = objLength(obj1);
-        const obj2Length = objLength(obj2);
+    if ( obj1Length === obj2Length ) {
 
-        if ( obj1Length === obj2Length ) {
+        for ( let i = 0; i < obj1Length; i++ ) {
+            const obj1Key = objKeys(obj1)[i];
+            const obj2Key = objKeys(obj2)[i];
 
-            for ( let i = 0; i < obj1Length; i++ ) {
-                const obj1Key = objKeys(obj1)[i];
-                const obj2Key = objKeys(obj2)[i];
+            const obj1Prop = obj1[obj1Key];
+            const obj2Prop = obj2[obj2Key];
 
-                const obj1Prop = obj1[obj1Key];
-                const obj2Prop = obj2[obj2Key];
+            // if obj1Prop is an object and obj2Prop is not
+            if ( typeof obj1Prop === 'object' && typeof obj2Prop !== 'object' ) {
+                return false;
+            // if obj1Prop is not an object but obj2Prop is
+            } else if ( typeof obj1Prop !== 'object' && typeof obj2Prop === 'object' ) {
+                return false;
+            // if both obj1Prop and obj2Prop are objects
+            } else if ( typeof obj1Prop === 'object' && typeof obj2Prop === 'object' ) {
 
-                // if obj1Prop is an object and obj2Prop is not
-                if ( typeof obj1Prop === 'object' && typeof obj2Prop !== 'object' ) {
+                if ( obj1Prop === null && obj2Prop !== null ) {
                     return false;
-                // if obj1Prop is not an object but obj2Prop is
-                } else if ( typeof obj1Prop !== 'object' && typeof obj2Prop === 'object' ) {
+                } else if ( obj1Prop !== null && obj2Prop === null ) {
                     return false;
+                } else if ( obj1Prop !== null && obj2Prop !== null ) {
+                    if ( equalPropNum( obj1Prop, obj2Prop ) === false ) {
+                        return false;
+                    }
+                }
+            }
+        }
+    } else {
+        return false;
+    }
+    return true;
+}
+
+// if compares all the keys and values of an object to tell if they have identical properties
+function deepEqual( obj1, obj2 ) {
+    const obj1Length = objLength(obj1);
+    const obj2Length = objLength(obj2);
+
+    if ( obj1Length === obj2Length ) {
+        for ( let i = 0; i < obj1Length; i++ ) {
+
+            const obj1Key = objKeys(obj1)[i];
+            const obj2Key = objKeys(obj2)[i];
+
+            const obj1Prop = obj1[obj1Key];
+            const obj2Prop = obj2[obj2Key];
+
+            if ( obj1Key === obj2Key ) {
                 // if both obj1Prop and obj2Prop are objects
-                } else if ( typeof obj1Prop === 'object' && typeof obj2Prop === 'object' ) {
-
+                if ( typeof obj1Prop === 'object' && typeof obj2Prop === 'object' ) {
+                    // null is also an object is js
+                    // so in order to act on 'objects' explicitly we should compare them against null
                     if ( obj1Prop === null && obj2Prop !== null ) {
                         return false;
                     } else if ( obj1Prop !== null && obj2Prop === null ) {
                         return false;
                     } else if ( obj1Prop !== null && obj2Prop !== null ) {
-                        checkPropNum( obj1Prop, obj2Prop );
+                        // call the function recursively on the property objects
+                        if ( deepEqual(  obj1Prop, obj2Prop ) === false ) {
+                            return false;
+                        }
                     }
+
+                } else if ( obj1Prop !== obj2Prop ) {
+                    return false;
                 }
+            } else {
+                return false;
             }
-        } else {
-            return false;
         }
-    };
-
-    if ( checkPropNum(object1, object2) === false ) return false;
-    else return true;
+    } else {
+        return false;
+    }
+    return true;
 }
 
-// TODO: deepEqual function
-function deepEqual() {
-
-}
-
-Obj1 = {val1: 23, val2: {is: 'object'}, val3: 'moo'};
-Obj2 = {val1: 23, val2: {is: 'object'}, val3: 'moo'};
-Obj3 = {val1: 2, val2: 'haha', val3: 'moo'};
+const Obj1 = {val1: 23, val2: {is: 'object', and: 'object'}, val3: {say: 'moo', and: {moo: 'again', and: 'again'}}},
+      Obj2 = {val1: 23, val2: {is: 'object', and: 'object'}, val3: {say: 'moo', and: {moo: 'again', and: 'again'}}},
+      Obj3 = {val1: 2, val2: 'haha', val3: 'moo'},
+      Obj4 = {val1: 2, val2: 'haha', val3: 'moo'};
