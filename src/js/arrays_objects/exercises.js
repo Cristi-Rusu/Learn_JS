@@ -119,6 +119,7 @@ const List = arrayToListR([1, 2, 3, 4, 5]);
 const objLength = obj => Object.keys(obj).length;
 const objKeys = obj => Object.keys(obj);
 
+// it tells if the objects have the same number of properties(nested as well)
 function equalPropNum( obj1, obj2 ) {
     const obj1Length = objLength(obj1);
     const obj2Length = objLength(obj2);
@@ -158,7 +159,7 @@ function equalPropNum( obj1, obj2 ) {
     return true;
 }
 
-// if compares all the keys and values of an object to tell if they have identical properties
+// it compares all the keys and values of an object to tell if they have identical properties
 function deepEqual( obj1, obj2 ) {
     const obj1Length = objLength(obj1);
     const obj2Length = objLength(obj2);
@@ -201,6 +202,7 @@ function deepEqual( obj1, obj2 ) {
     return true;
 }
 
+// used to test functions
 const Obj1 = {val1: 23, val2: {is: 'object', and: 'object'}, val3: {say: 'moo', and: {moo: 'again', and: 'again'}}},
       Obj2 = {val1: 23, val2: {is: 'object', and: 'object'}, val3: {say: 'moo', and: {moo: 'again', and: 'again'}}},
       Obj3 = {val1: 2, val2: 'haha', val3: 'moo'},
