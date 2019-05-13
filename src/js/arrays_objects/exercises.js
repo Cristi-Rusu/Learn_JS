@@ -32,10 +32,11 @@ const reverseArrayInPlace = ( array ) => {
     for ( let i = 0; i < Math.floor(array.length / 2); i++) {
         // currentVal is used to swap array items
         let currentVal = array[i];
+        // mirrorIndex is the item with the same index if counting from the end
+        let mirrorIndex = array.length - 1 - i;
         // swap the items in the array
-        array[i] = array[array.length - 1 - i];
-        array[array.length - 1 - i] = currentVal;
-        // array[array.length - 1 - i] is the item with the same index if counting from the end
+        array[i] = array[mirrorIndex];
+        array[mirrorIndex] = currentVal;
     }
     return array;
 };
@@ -51,11 +52,9 @@ function prependList( item, list ) {
 
 // iterative solution
 function arrayToListI( array ) {
-    let list, oldList;
-    oldList = null;
+    let list = null;
     for ( let i  = array.length - 1; i >= 0; i-- ) {
-        list = {value: array[i], rest: oldList};
-        oldList = list;
+        list = {value: array[i], rest: list};
     }
     return list;
 }
@@ -113,6 +112,12 @@ function nthInList( n, list ) {
     }
 }
 
+function nthInListR( list, n ) {
+    if ( !list ) return undefined;
+    else if ( n === 0 ) return list.value;
+    else return nthInListR( list.rest, n-1 );
+}
+
 // used to test listTOArray() function
 const List = arrayToListR([1, 2, 3, 4, 5]);
 
@@ -159,6 +164,8 @@ function equalPropNum( obj1, obj2 ) {
     return true;
 }
 
+// GOVNO CODE
+
 // it compares all the keys and values of an object to tell if they have identical properties
 function deepEqual( obj1, obj2 ) {
     const obj1Length = objLength(obj1);
@@ -199,6 +206,27 @@ function deepEqual( obj1, obj2 ) {
     } else {
         return false;
     }
+    return true;
+}
+
+// deepEqual optimized
+function deepEqual_o( a, b ) {
+    if ( a === b ) return true;
+    // if at least one of this conditions is true
+    // it means that 'a' and 'b' have different values
+    // if they where both null the function would return true on the first row
+    if ( a === null || typeof a !== 'object' ||
+         b === null || typeof b !== 'object') return false;
+    // the only possible outcome at this point is that 'a' and 'b' are both regular objects
+    let keysA = Object.keys(a), keysB = Object.keys(b);
+
+    if ( keysA.length !== keysB.length ) return false;
+
+    for ( let key of keysA ) {
+        // if keysB doesn't include a key from 'a', or a property from 'a' is not equal to a property from 'b'
+        if ( !keysB.includes(key) || !deepEqual(a[key], b[key]) ) return false;
+    }
+
     return true;
 }
 
