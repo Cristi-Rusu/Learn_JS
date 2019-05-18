@@ -201,14 +201,14 @@ function dominantDirection( text ) {
         return script ? script.direction : 'none';
     }).filter( ({name}) => name !== 'none' );
 
-    // a loop would be more efficient and suitable
+    // a loop would be more efficient in this case
     // for the sake of practicing the concepts leaned, 'reduce' was used
     let dominant = directions.reduce((dominant, current) => {
         if ( dominant.count < current.count ) {
             dominant = current;
         }
         return dominant;
-    }, {count: 0});
+    }, {name: 'none', count: 0});
 
     return dominant.name;
 }
