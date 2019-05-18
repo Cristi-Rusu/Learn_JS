@@ -177,3 +177,39 @@ function flattenArray( array ) {
     return flattened;
 }
 
+// a higher order loop function
+function highLoop( start, test, update, action ) {
+    let looped = 0;
+    for ( let val = start; test(val); val = update(val) ) {
+        action(val);
+        // used to exit infinite loops
+        looped++;
+        if ( looped > 10000 ) break;
+    }
+}
+
+function everyElem( array, test ) {
+    for ( let item of array ) {
+        if ( !test(item) ) return false;
+    }
+    return true;
+}
+
+function dominantDirection( text ) {
+    let directions = countBy(text, char => {
+        let script = charScript( char.codePointAt(0) );
+        return script ? script.direction : 'none';
+    }).filter( ({name}) => name !== 'none' );
+
+    // a loop would be more efficient and suitable
+    // for the sake of practicing the concepts leaned, 'reduce' was used
+    let dominant = directions.reduce((dominant, current) => {
+        if ( dominant.count < current.count ) {
+            dominant = current;
+        }
+        return dominant;
+    }, {count: 0});
+
+    return dominant.name;
+}
+
