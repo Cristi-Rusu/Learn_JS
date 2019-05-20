@@ -178,3 +178,67 @@ console.log(matrix);
 
 let matrix2 = new Matrix(3, 3, (x, y) => `(${x}, ${y})` );
 console.log(matrix2);
+
+// getters are properties that hide a method call with the key word 'get'
+let varyingSize = {
+    get size() {
+        return Math.floor(Math.random() * 100);
+    }
+};
+// the 'size' property calls first the method and then display's it's value
+// console.log(varyingSize.size);
+// console.log(varyingSize.size);
+
+// the 'Temperature' class stores the information in celsius degrees
+// fahrenheit degrees can be set and got using setters and getters
+// thanks to a static method, 'Temperature' instances can be created by passing fahrenheit values
+class Temperature{
+    constructor( celsius ) {
+        this.celsius = celsius;
+    }
+    get fahrenheit() {
+        return (this.celsius * 1.8 + 32).toFixed(1);
+    }
+    // setters are used to assign a property some value
+    set fahrenheit( value ) {
+        this.celsius = ((value - 32) / 1.8).toFixed(1);
+    }
+    // statics are stored on the constructor
+    // they are used to create instances of a class from different values
+    static fromFahrenheit( value ) {
+        return new Temperature( ((value - 32 ) / 1.8).toFixed(1) );
+    }
+}
+
+let temp = new Temperature(25);
+console.log('temp:', temp);
+// get fahrenheit value
+console.log('temp fahrenheit:', temp.fahrenheit);
+// set a fahrenheit value
+temp.fahrenheit = 100;
+// this method has changed the instance of 'Temperature'
+console.log('temp:', temp);
+
+
+// 'SymmetricMatrix' is a subclass
+// 'Matrix' is it's superclass
+// the 'super' keyword is used to access the superclass' properties
+// 'super' function is the constructor function of the superclass
+class SymmetricMatrix extends Matrix {
+    constructor(size, element = (x, y) => undefined ) {
+        super(size, size, (x, y) => {
+            if ( x < y) return element(y, x);
+            else return element(x, y);
+        });
+    }
+    set(x, y, value) {
+        super.set(x, y, value);
+        if ( x !== y ) {
+            super.set(y, x, value);
+        }
+    }
+}
+
+let symMatrix = new SymmetricMatrix(3, (x, y) => `(${x}, ${y})`);
+console.log(symMatrix);
+console.log('symMatrix(1, 2):', symMatrix.get(1, 2));
