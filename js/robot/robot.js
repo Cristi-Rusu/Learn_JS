@@ -118,15 +118,68 @@ function randomRobot( state ) {
  * @param {instanceof VillageState} state it stores the information about the robot's and parcels' location 
  * @param {Array} memory It stores the route the robot has to follow
  */
-function routeRobot( state, memory ) {
+function mailRobot( state, memory ) {
     if ( memory.length === 0 ) {
         memory = mailRoute;
     }
+    // make the first move from the memory, and update it
     return {
         direction: memory[0],
         memory: memory.slice(1)
     };
 }
+
+/**
+ * finds one of the shortest paths to a destination, given the starting point and the graph
+ * @param {object} graph the graph from which the paths will be found
+ * @param {string} from the name of the starting point(it is a key from the graph object)
+ * @param {string} to the name of the goal point(it is a key from the graph object)
+ */
+function findPath( graph, from, to ) {
+    // this array stores all the posible paths until at least one matching is found and returned
+    let paths = [{at: from, path: []}];
+
+    for ( let i = 0; i < paths.length; i++ ) {
+        let {at, path} = paths[i];
+        // iterate through the connected points of the current position - "at" to find the destination
+        for ( let place of graph[at] ) {
+            if ( place === to ) return path.concat(place);
+            // if this place is not in the 'paths' array, add it for further exploration
+            if ( !paths.some(p => p.at === place) ) {
+                paths.push({at: place, path: path.concat(place)});
+            }
+        }
+    }
+}
+
+/**
+ * A robot which finds the path to parcels and their addresses. It chooses the parcels in consecutive order.
+ * A more optimized version which chooses from the closest ones will be built.
+ * @param {instanceof VillageState} param0 use the destructuring syntax to access the properties more easily
+ * @param {Array} route similar to the other robot's memory, but it is computed based on the current situation
+ */
+function routeRobot( {place, parcels}, route ) {
+    // create a new route if it's empty
+    if ( route.length === 0 ) {
+        let parcel = parcels[0];
+        // if the parcel is not picked, find the path to it
+        // in the other case, find it's address
+        if ( parcel.place !== place ) {
+            route = findPath(roadGraph, place, parcel.place);
+        } else {
+            route = findPath(roadGraph, place, parcel.address);
+        }
+    }
+    // move on the computed route, and update it after the move
+    return {
+        direction: route[0],
+        memory: route.slice(1)
+    }
+}
+
+// TODO: Create a more optimal robot, 
+// which instead of going for the parcels in consecutive order,
+// chooses a route, given the state.
  
 /**
  * the program run function
@@ -153,7 +206,7 @@ console.groupCollapsed('randomRobot');
 runRobot(VillageState.random(), randomRobot);
 console.groupEnd();
 
-// run routeRobot
-console.group('routeRobot');
-runRobot(VillageState.random(), routeRobot, []);
+// run mailRobot
+console.group('mailRobot');
+runRobot(VillageState.random(), mailRobot, []);
 console.groupEnd();
