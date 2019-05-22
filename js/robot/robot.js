@@ -207,6 +207,11 @@ runRobot(VillageState.random(), randomRobot);
 console.groupEnd();
 
 // run mailRobot
-console.group('mailRobot');
+console.groupCollapsed('mailRobot');
 runRobot(VillageState.random(), mailRobot, []);
+console.groupEnd();
+
+// run routeRobot
+console.groupCollapsed('routeRobot');
+runRobot(VillageState.random(), routeRobot, []);
 console.groupEnd();
