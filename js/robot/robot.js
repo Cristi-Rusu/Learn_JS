@@ -188,33 +188,24 @@ function routeRobot( {place, parcels}, route ) {
  * It check whether a given place contains a parcel or is it's address(one of the 2, not both)
  * @param {instanceof VillageState} state it stores the information about the robot's and parcels' location 
  * @param {string} place the place to check for a parcel's "place" or "address"
- * @param {string} location the coordinate of the parcel to look for("place" or "address")
  */
-function hasParcels(state, place, location) {
-    if ( location === "place" ) {
-        return state.parcels.some(parcel => parcel[location] === place);
-    } else if ( location === "address" ) {
-        let pickedParcels = state.parcels.filter(parcel => parcel.place === state.place);
-        return pickedParcels.some(parcel => parcel[location] === place);
-    } else {
-        throw new TypeError("Invalid location(it should be either 'place' or 'address').");
-    }
+function hasParcel(state, place) {
+        return state.parcels.some(parcel => parcel.place === place);
 }
 
 /**
  * 
  * @param {object} graph the graph from which the paths will be found
  * @param {instanceof VillageState} state it stores the information about the robot's and parcels' location
- * @param {string} location the coordinate of the parcel to look for("place" or "address")
  */
-function findParcels( graph, state, location ) {
+function findParcel( graph, state ) {
     let paths = [{at: state.place, path: []}];
     for ( let i = 0; i < paths.length; i++ ) {
         let {at, path} = paths[i];
 
         for ( let place of graph[at] ) {
             // check if this place contains a parcel's "place" or "address", depending on the parameter - "location"
-            if ( hasParcels(state, place, location) ) return path.concat(place);
+            if ( hasParcel(state, place) ) return path.concat(place);
             if ( !paths.some(p => p.at === place) ) {
                 paths.push({at: place, path: path.concat(place)});
             }
@@ -227,20 +218,36 @@ function findParcels( graph, state, location ) {
  * It picks the closest parcels and delivers the ones whose address is the closest.
  * Though I claimed it to be smart, it's efficiency is worse than that of the "routeRobot".
  * @param {instancof VillageState} state it stores the information about the robot's and parcels' location
- * @param {Array} route the initial robot's "plan"(it will first try to move in those directions)
+ * @param {Object} memory an object with "route" and "picked" properties, to store the information about the moves
  */
-function smartRobot( state, route ) {
+function smartRobot( state, {route, picked} ) {
+    picked = picked.filter(pi => pi.address !== state.place);
+
+    for ( let parcel of state.parcels ) {
+        if ( parcel.place === state.place ) {
+            if ( !picked.some(pi => pi.place === parcel.place &&
+                pi.address === parcel.address)) {
+                picked.push(parcel);
+            }
+        }
+    }
+
     if ( route.length === 0 ) {
-        // if there are picked parcels
-        if ( hasParcels(state, state.place, "place") ) {
-            route = findParcels(roadGraph, state, "address");
+        // if there are no picked parcels
+        if ( picked.length === 0 ) {
+            route = findParcel(roadGraph, state);
         } else {
-            route = findParcels(roadGraph, state, "place");
+            route = findPath(roadGraph, state.place, picked[0].address);
         }
     }
     return {
         direction: route[0],
-        memory: route.slice(1)
+        memory: {
+            route: route.slice(1),
+            picked: picked.map(pi => {
+                return {place: route[0], address: pi.address};
+            })
+        }
     }
 }
  
