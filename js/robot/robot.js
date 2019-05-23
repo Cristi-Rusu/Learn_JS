@@ -221,8 +221,9 @@ function findParcel( graph, state ) {
  * @param {Object} memory an object with "route" and "picked" properties, to store the information about the moves
  */
 function smartRobot( state, {route, picked} ) {
+    // exclude the delivered parcels
     picked = picked.filter(pi => pi.address !== state.place);
-
+    // remember a new parcel only if it is not in the memory already
     for ( let parcel of state.parcels ) {
         if ( parcel.place === state.place ) {
             if ( !picked.some(pi => pi.place === parcel.place &&
