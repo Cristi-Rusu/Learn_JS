@@ -215,7 +215,7 @@ function findParcel( graph, state ) {
 
 /**
  * This robot chooses it's route based on the state of it's current environment.
- * It picks the closest parcels and delivers the ones whose address is the closest.
+ * It picks the closest parcels and delivers them in the order they were picked.
  * Though I claimed it to be smart, it's efficiency is worse than that of the "routeRobot".
  * @param {instancof VillageState} state it stores the information about the robot's and parcels' location
  * @param {Object} memory an object with "route" and "picked" properties, to store the information about the moves
