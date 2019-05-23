@@ -180,6 +180,69 @@ function routeRobot( {place, parcels}, route ) {
 // TODO: Create a more optimal robot, 
 // which instead of going for the parcels in consecutive order,
 // chooses a route, given the state.
+
+// DONE: Make the robot choose a route based on the current state.
+// Left to do: Make the algorithm more efficient than the one of "routeRobot"
+
+/**
+ * It check whether a given place contains a parcel or is it's address(one of the 2, not both)
+ * @param {instanceof VillageState} state it stores the information about the robot's and parcels' location 
+ * @param {string} place the place to check for a parcel's "place" or "address"
+ * @param {string} location the coordinate of the parcel to look for("place" or "address")
+ */
+function hasParcels(state, place, location) {
+    if ( location === "place" ) {
+        return state.parcels.some(parcel => parcel[location] === place);
+    } else if ( location === "address" ) {
+        let pickedParcels = state.parcels.filter(parcel => parcel.place === state.place);
+        return pickedParcels.some(parcel => parcel[location] === place);
+    } else {
+        throw new TypeError("Invalid location(it should be either 'place' or 'address').");
+    }
+}
+
+/**
+ * 
+ * @param {object} graph the graph from which the paths will be found
+ * @param {instanceof VillageState} state it stores the information about the robot's and parcels' location
+ * @param {string} location the coordinate of the parcel to look for("place" or "address")
+ */
+function findParcels( graph, state, location ) {
+    let paths = [{at: state.place, path: []}];
+    for ( let i = 0; i < paths.length; i++ ) {
+        let {at, path} = paths[i];
+
+        for ( let place of graph[at] ) {
+            // check if this place contains a parcel's "place" or "address", depending on the parameter - "location"
+            if ( hasParcels(state, place, location) ) return path.concat(place);
+            if ( !paths.some(p => p.at === place) ) {
+                paths.push({at: place, path: path.concat(place)});
+            }
+        }
+    }
+}
+
+/**
+ * This robot chooses it's route based on the state of it's current environment.
+ * It picks the closest parcels and delivers the ones whose address is the closest.
+ * Though I claimed it to be smart, it's efficiency is worse than that of the "routeRobot".
+ * @param {instancof VillageState} state it stores the information about the robot's and parcels' location
+ * @param {Array} route the initial robot's "plan"(it will first try to move in those directions)
+ */
+function smartRobot( state, route ) {
+    if ( route.length === 0 ) {
+        // if there are picked parcels
+        if ( hasParcels(state, state.place, "place") ) {
+            route = findParcels(roadGraph, state, "address");
+        } else {
+            route = findParcels(roadGraph, state, "place");
+        }
+    }
+    return {
+        direction: route[0],
+        memory: route.slice(1)
+    }
+}
  
 /**
  * the program run function
@@ -201,6 +264,39 @@ function runRobot( state, robot, memory ) {
         console.log(`Moved to ${action.direction}`);
     }
 }
+
+/**
+ * This function compares 2 algorithms' efficiency in the same environment
+ * @param {function} robot1 a parcel delivery algorithm
+ * @param {Array} memory1 the initial "plan" of the 1st algohritm(it will try to first make these moves)
+ * @param {function} robot2 a parcel delivery algorithm
+ * @param {Array} memory2 the initial "plan" of the 2nd algohritm(it will try to first make these moves)
+ */
+function compareRobots( robot1, memory1, robot2, memory2 ) {
+    function testRobot( state, robot, memory ) {
+        for ( let turn = 0; ; turn++ ) {
+            if ( state.parcels.length === 0 ) return turn;
+
+            action = robot( state, memory );
+            state = state.move(action.direction);
+            memory = action.memory;
+        }
+    }
+    const average = ( array ) => array.reduce((a, b) => a + b) / array.length;
+
+    let testsLog1 = [], testsLog2 = [];
+    for ( let i = 0; i < 1000; i++ ) {
+        let randomState, test1, test2;
+        randomState = VillageState.random();
+        test1 = testRobot( randomState, robot1, memory1 );
+        test2 = testRobot( randomState, robot2, memory2 );
+        testsLog1.push(test1);
+        testsLog2.push(test2);
+    }
+    console.log(robot1.name + " eficiency: " + average(testsLog1).toFixed(3));
+    console.log(robot2.name + " eficiency: " + average(testsLog2).toFixed(3));
+}
+
 // run randomRobot
 console.groupCollapsed('randomRobot');
 runRobot(VillageState.random(), randomRobot);
