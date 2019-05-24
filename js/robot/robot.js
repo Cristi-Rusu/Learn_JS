@@ -1,3 +1,5 @@
+/* Delivery Automaton */
+
 // The village's graph will be formed from this array
 // the '-' symbol indicates the direction
 // it will be used to tell what places can be reached from a given point, by spliting the item on the '-' symbol

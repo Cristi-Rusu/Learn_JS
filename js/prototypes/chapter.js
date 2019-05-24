@@ -1,3 +1,5 @@
+/* Prototypes */
+
 // this is a prototype for rabbit objects
 let protoRabbit = {
     speak( line ) {

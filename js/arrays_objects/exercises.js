@@ -1,3 +1,5 @@
+/* Arrays and Objects */
+
 // generates an array of consecutive numbers
 const rangeFun = ( start, end, step = 1 ) => {
     const rangeArray = [];
