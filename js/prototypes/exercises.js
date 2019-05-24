@@ -148,3 +148,32 @@ console.log('group2:', group2);
 for ( let {i, val} of group2 ) {
     group2.content[i] = val * 3;
 }
+
+// persistent(immutable) group
+class PGroup {
+    constructor() {
+        this.content = [];
+    }
+
+    add( item ) {
+        if ( !this.content.includes(item) ) {
+            return new PGroup(this.content.concat(item));
+        } else {
+            return this;
+        }
+    }
+    delete( item ) {
+        return new PGroup(this.content.filter(c => c !== item));
+    }
+    has( item ) {
+        return this.content.includes(item);
+    }
+
+    static from( array ) {
+        let formedGroup = new Group();
+        for ( let elem of array ) {
+            formedGroup.add(elem);
+        }
+        return formedGroup;
+    }
+}
