@@ -182,7 +182,6 @@ function routeRobot( {place, parcels}, route ) {
 /**
  * This robot chooses it's route based on the state of it's current environment.
  * It computes all routes and moves on the shortest ones, giving advantage to those which contain a new parcel
- * Though I claimed it to be smart, it's efficiency is worse than that of the "routeRobot".
  * @param {instancof VillageState} state it stores the information about the robot's and parcels' location
  * @param {Object} memory an object with "route" and "picked" properties, to store the information about the moves
  */
