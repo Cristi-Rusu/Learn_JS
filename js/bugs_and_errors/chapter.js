@@ -94,14 +94,17 @@ function promptDir( question ) {
 }
 
 function askDirection() {
+    // this kind of loop runs until a 'break', 'return' or 'throw' is met
     for (;;) {
         try {
-            let dir = promtDir("Where to?");
+            let dir = promptDir("Where to?");
             console.log(`You chose ${dir}`);
             break;
         } catch(e) {
+            // If the exception occoured because of invalid input, log the problem and try again
             if ( e instanceof InputError ) {
-                console.log("Not a valid direction. Try again.")
+                console.log("Not a valid direction. Try again.");
+            // Otherwise it means it's a program error. You want to spot it immediately, so throw it.
             } else {
                 throw e;
             }
