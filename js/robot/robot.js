@@ -177,78 +177,38 @@ function routeRobot( {place, parcels}, route ) {
     }
 }
 
-// TODO: Create a more optimal robot, 
-// which instead of going for the parcels in consecutive order,
-// chooses a route, given the state.
-
-// DONE: Make the robot choose a route based on the current state.
-// Left to do: Make the algorithm more efficient than the one of "routeRobot"
-
-/**
- * It check whether a given place contains a parcel or is it's address(one of the 2, not both)
- * @param {instanceof VillageState} state it stores the information about the robot's and parcels' location 
- * @param {string} place the place to check for a parcel's "place" or "address"
- */
-function hasParcel(state, place) {
-        return state.parcels.some(parcel => parcel.place === place);
-}
-
-/**
- * 
- * @param {object} graph the graph from which the paths will be found
- * @param {instanceof VillageState} state it stores the information about the robot's and parcels' location
- */
-function findParcel( graph, state ) {
-    let paths = [{at: state.place, path: []}];
-    for ( let i = 0; i < paths.length; i++ ) {
-        let {at, path} = paths[i];
-
-        for ( let place of graph[at] ) {
-            // check if this place contains a parcel's "place" or "address", depending on the parameter - "location"
-            if ( hasParcel(state, place) ) return path.concat(place);
-            if ( !paths.some(p => p.at === place) ) {
-                paths.push({at: place, path: path.concat(place)});
-            }
-        }
-    }
-}
-
 /**
  * This robot chooses it's route based on the state of it's current environment.
- * It picks the closest parcels and delivers them in the order they were picked.
+ * It computes all routes and moves on the shortest ones, giving advantage to those which contain a new parcel
  * Though I claimed it to be smart, it's efficiency is worse than that of the "routeRobot".
  * @param {instancof VillageState} state it stores the information about the robot's and parcels' location
  * @param {Object} memory an object with "route" and "picked" properties, to store the information about the moves
  */
-function smartRobot( state, {route, picked} ) {
-    // exclude the delivered parcels
-    picked = picked.filter(pi => pi.address !== state.place);
-    // remember a new parcel only if it is not in the memory already
-    for ( let parcel of state.parcels ) {
-        if ( parcel.place === state.place ) {
-            if ( !picked.some(pi => pi.place === parcel.place &&
-                pi.address === parcel.address)) {
-                picked.push(parcel);
-            }
+function smartRobot( {place, parcels}, memory ) {
+    // find the routes to all parcels
+    let routes = parcels.map(parcel => {
+        if ( parcel.place !== place ) {
+            // if it's not picked, find it's place
+            return {route: findPath(roadGraph, place, parcel.place), picked: false}
+        } else {
+            // find the parcel address
+            return {route: findPath(roadGraph, place, parcel.address), picked: true}
         }
+    });
+    // Evaluates the importance of routes.
+    // It's counted negatively. The ones not picked get an advantage.
+    // The higher the score, the better
+    function score( {route, picked} ) {
+        return (!picked ? 0.5 : 0) - route.length;
     }
 
-    if ( route.length === 0 ) {
-        // if there are no picked parcels
-        if ( picked.length === 0 ) {
-            route = findParcel(roadGraph, state);
-        } else {
-            route = findPath(roadGraph, state.place, picked[0].address);
-        }
+    if ( memory.length === 0 ) {
+        // chose the most convenient route
+        memory = routes.reduce((a, b) => score(a) > score(b) ? a : b).route;
     }
     return {
-        direction: route[0],
-        memory: {
-            route: route.slice(1),
-            picked: picked.map(pi => {
-                return {place: route[0], address: pi.address};
-            })
-        }
+        direction: memory[0],
+        memory: memory.slice(1)
     }
 }
  
