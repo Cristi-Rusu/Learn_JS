@@ -5,13 +5,13 @@
 
 // this higher order function takes an array and a function to introduce in the for loop and if statement
 function filterArray(array, test) {
-  const passed = [];
-  for (const elem of array) {
-    if (test(elem)) {
-      passed.push(elem);
+    const passed = [];
+    for (const elem of array) {
+        if (test(elem)) {
+            passed.push(elem);
+        }
     }
-  }
-  return passed;
+    return passed;
 }
 
 console.log('Living Scripts:', filterArray(Scripts, script => script.living));
@@ -24,26 +24,26 @@ console.log('Living Scripts:', filterArray(Scripts, script => script.living));
 
 // this function is similar to the filterArray function instead it returns
 function mapArray(array, transform) {
-  const mapped = [];
-  for (const elem of array) {
-    mapped.push(transform(elem));
-  }
-  return mapped;
+    const mapped = [];
+    for (const elem of array) {
+        mapped.push(transform(elem));
+    }
+    return mapped;
 }
 
 const rtlScripts = Scripts.filter(script => script.direction === 'rtl');
 console.log('Right to Left Scripts Names:',
-  mapArray(rtlScripts, script => script.name));
+    mapArray(rtlScripts, script => script.name));
 
 // like filter, map is a standard array method:
 // console.log('Right to Left Scripts Names:', rtlScripts.map(script => script.name ));
 
 function reduceArray(array, combine, start) {
-  let current = start;
-  for (const elem of array) {
-    current = combine(current, elem);
-  }
-  return current;
+    let current = start;
+    for (const elem of array) {
+        current = combine(current, elem);
+    }
+    return current;
 }
 // 'a' stands for the 'current' variable in the function
 // 'b' stand for the 'elem' variable in the function
@@ -56,9 +56,9 @@ console.log(reduceArray([1, 2, 3, 4, 5, 6], (a, b) => a + b, 0));
 
 // calculate the character number function
 function characterCount(script) {
-  // gets the scrip.ranges array
-  // and adds range difference to the 'count'
-  return script.ranges.reduce((count, [from, to]) => count + (to - from), 0);
+    // gets the scrip.ranges array
+    // and adds range difference to the 'count'
+    return script.ranges.reduce((count, [from, to]) => count + (to - from), 0);
 }
 
 // returns the script with the biggest number of characters
@@ -69,10 +69,10 @@ function characterCount(script) {
 // log the script with the biggest range without higher order functions
 let biggestRange = null;
 for (const script of Scripts) {
-  if (biggestRange === null
+    if (biggestRange === null
     || characterCount(biggestRange) < characterCount(script)) {
-    biggestRange = script;
-  }
+        biggestRange = script;
+    }
 }
 // console.log( biggestRange );
 
@@ -82,12 +82,12 @@ const hanScript = Scripts.filter(script => script.name === 'Han')[0];
 console.log(characterCount(hanScript));
 
 function averageNum(array) {
-  return array.reduce((a, b) => a + b) / array.length;
+    return array.reduce((a, b) => a + b) / array.length;
 }
 
 // output the average year of the living Scripts
 console.log(Math.round(averageNum(
-  Scripts.filter(script => script.living).map(script => script.year),
+    Scripts.filter(script => script.living).map(script => script.year),
 )));
 
 // output the average year of the not living Scripts
@@ -102,29 +102,29 @@ console.log(Math.round(averageNum(
 
 // returns the script that contains the character code provided
 function charScript(code) {
-  for (const script of Scripts) {
+    for (const script of Scripts) {
     // some is a higher function method for arrays
     // this piece of code returns whether the code is contained in the current array of ranges
-    if (script.ranges.some(([from, to]) => code >= from && code < to)) {
-      return script;
+        if (script.ranges.some(([from, to]) => code >= from && code < to)) {
+            return script;
+        }
     }
-  }
-  return null;
+    return null;
 }
 
 // same as 'charScript' but uses the Rest syntax and the 'map' higher order function
 // to return an array of scripts containing the character codes provided
 function charScriptRest(...scriptCodes) {
-  return scriptCodes.map((code) => {
-    for (const script of Scripts) {
-      // some is a higher function method for arrays
-      // this piece of code returns whether the code is contained in the current array of ranges
-      if (script.ranges.some(([from, to]) => code >= from && code < to)) {
-        return script;
-      }
-    }
-    return null;
-  });
+    return scriptCodes.map((code) => {
+        for (const script of Scripts) {
+            // some is a higher function method for arrays
+            // this piece of code returns whether the code is contained in the current array of ranges
+            if (script.ranges.some(([from, to]) => code >= from && code < to)) {
+                return script;
+            }
+        }
+        return null;
+    });
 }
 
 // 'findIndex' method takes a test function and returns the index of the first element which satisfies the it
@@ -132,85 +132,87 @@ function charScriptRest(...scriptCodes) {
 
 // this function counts the elements in an array according to the categories given in the groupName function
 function countBy(items, groupName) {
-  const counts = [];
-  for (const item of items) {
+    const counts = [];
+    for (const item of items) {
     // the name is received from the assigned function
-    const name = groupName(item);
-    // findIndex returns the index of the first item in 'counts' whose 'name' prop is equal to the current name
-    // if there is no such item it returns -1
-    const known = counts.findIndex(c => c.name === name);
-    if (known === -1) {
-      counts.push({ name, count: 1 });
-    } else {
-      counts[known].count += 1;
+        const name = groupName(item);
+        // findIndex returns the index of the first item in 'counts' whose 'name' prop is equal to the current name
+        // if there is no such item it returns -1
+        const known = counts.findIndex(c => c.name === name);
+        if (known === -1) {
+            counts.push({ name, count: 1 });
+        } else {
+            counts[known].count += 1;
+        }
     }
-  }
-  return counts;
+    return counts;
 }
 
 function textScripts(text) {
-  // 'scripts' stores the names and num of characters in the 'text'
-  // call 'countBy' higher function to count based on scripts
-  const scripts = countBy(text, (char) => {
+    // 'scripts' stores the names and num of characters in the 'text'
+    // call 'countBy' higher function to count based on scripts
+    const scripts = countBy(text, (char) => {
     // determine the script containing the char using 'charScript'
     // get the char code with 'codePointAt(0)'
-    const script = charScript(char.codePointAt(0));
-    return script ? script.name : 'none';
+        const script = charScript(char.codePointAt(0));
+        return script ? script.name : 'none';
     // filter out the object with the 'name' === 'none'
-  }).filter(({ name }) => name !== 'none');
+    }).filter(({ name }) => name !== 'none');
 
-  const total = scripts.reduce((n, { count }) => n + count, 0);
-  if (total === 0) return 'No scripts are found';
-  // return an array of names and percentages using 'map' to transform each item in the array
-  return scripts.map(({ name, count }) => {
-    const percentage = Math.round((count * 100) / total);
-    return `${name} ${percentage}%`;
+    const total = scripts.reduce((n, { count }) => n + count, 0);
+    if (total === 0) return 'No scripts are found';
+    // return an array of names and percentages using 'map' to transform each item in the array
+    return scripts.map(({ name, count }) => {
+        const percentage = Math.round((count * 100) / total);
+        return `${name} ${percentage}%`;
     // use the 'join' method to create a string separated by ', ' , from the array
-  }).join(', ');
+    }).join(', ');
 }
 
 function flattenArray(array) {
-  let flattened = array;
-  // while at least one item in the array is an array
-  while (flattened.some(item => Array.isArray(item))) {
+    let flattened = array;
+    // while at least one item in the array is an array
+    while (flattened.some(item => Array.isArray(item))) {
     // use 'reduce' to create a new array by concatenating 'flat' with each item in the 'flattened' array
-    flattened = flattened.reduce((flat, current) => flat.concat(current), []);
-  }
-  return flattened;
+        flattened = flattened.reduce(
+            (flat, current) => flat.concat(current), [],
+        );
+    }
+    return flattened;
 }
 
 // a higher order loop function
 function highLoop(start, test, update, action) {
-  let looped = 0;
-  for (let val = start; test(val); val = update(val)) {
-    action(val);
-    // used to exit infinite loops
-    looped += 1;
-    if (looped > 10000) break;
-  }
+    let looped = 0;
+    for (let val = start; test(val); val = update(val)) {
+        action(val);
+        // used to exit infinite loops
+        looped += 1;
+        if (looped > 10000) break;
+    }
 }
 
 function everyElem(array, test) {
-  for (const item of array) {
-    if (!test(item)) return false;
-  }
-  return true;
+    for (const item of array) {
+        if (!test(item)) return false;
+    }
+    return true;
 }
 
 function dominantDirection(text) {
-  const directions = countBy(text, (char) => {
-    const script = charScript(char.codePointAt(0));
-    return script ? script.direction : 'none';
-  }).filter(({ name }) => name !== 'none');
+    const directions = countBy(text, (char) => {
+        const script = charScript(char.codePointAt(0));
+        return script ? script.direction : 'none';
+    }).filter(({ name }) => name !== 'none');
 
-  // a loop would be more efficient in this case
-  // for the sake of practicing the concepts leaned, 'reduce' was used
-  const dominant = directions.reduce((d, current) => {
-    if (d.count < current.count) {
-      d = current;
-    }
-    return d;
-  }, { name: 'none', count: 0 });
+    // a loop would be more efficient in this case
+    // for the sake of practicing the concepts leaned, 'reduce' was used
+    const dominant = directions.reduce((d, current) => {
+        if (d.count < current.count) {
+            d = current;
+        }
+        return d;
+    }, { name: 'none', count: 0 });
 
-  return dominant.name;
+    return dominant.name;
 }
