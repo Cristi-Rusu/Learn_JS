@@ -16,6 +16,8 @@
       "max-len": ["error", { "ignoreComments": true }],
       "no-console": 0,
       "no-restricted-syntax": "off",
-      "no-param-reassign": "off"
+      "no-param-reassign": "off",
+      "prefer-destructuring": ["error", {"object": true, "array": false}],
+      "indent": ["error", 4]
     }
 }
