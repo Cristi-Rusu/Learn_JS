@@ -159,7 +159,8 @@ function parseINI(string) {
     let section = result;
     const matchInfo = str => str.match(/^(\w+)=(.+)$/);
     const matchNewSection = str => str.match(/^\[(\w+)\]$/);
-    const matchValid = str => str.match(/^\s*(;.*)?$/);
+    // matches an empty line or comment
+    const matchEmpty = str => str.match(/^\s*(;.*)?$/);
     // split the string into separate lines
     string.split(/\r?\n/).forEach((line) => {
         let match;
@@ -173,7 +174,7 @@ function parseINI(string) {
             result[match[1]] = {};
             // update the section; the next lines' information will be stored in this section
             section = result[match[1]];
-        } else if (!matchValid(line)) {
+        } else if (!matchEmpty(line)) {
             throw new Error(`Line: "${line}" is nos valid`);
         }
     });
