@@ -9,7 +9,8 @@
         "SharedArrayBuffer": "readonly"
     },
     "parserOptions": {
-        "ecmaVersion": 2018
+        "ecmaVersion": 2018,
+        "sourceType": "module"
     },
     "rules": {
       "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
@@ -18,6 +19,7 @@
       "no-restricted-syntax": "off",
       "no-param-reassign": "off",
       "prefer-destructuring": ["error", {"object": true, "array": false}],
-      "indent": ["error", 4]
+      "indent": ["error", 4],
+      "import/extensions": "ignorePackages"
     }
 }
