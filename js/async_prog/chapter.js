@@ -55,3 +55,45 @@ failure.then(val => console.log('Handler 1', val))
     })
     // because the promise is resolved now, the second handler can be executed
     .then(val => console.log('Handler 2', val));
+
+class Timeout extends Error {}
+
+function request(nest, target, type, content) {
+    return new Promise((resolve, reject) => {
+        let done = false;
+        function attempt(n) {
+            // send the request
+            // the last argument is the function to be executed after the response was received
+            nest.send(target, type, content, (failed, value) => {
+                done = true;
+                if (failed) reject(failed);
+                else resolve(value);
+            });
+            // if the request wasn't done in 250ms, retry or reject it
+            // if it was, return it's status(resolved or rejected promise)
+            setTimeout(() => {
+                if (done) return;
+                if (n < 3) attempt(n + 1);
+                else reject(new Timeout('Timed out'));
+            }, 250);
+        }
+        attempt(1);
+    });
+}
+
+// a promise based interface for defining new types
+function requestType(name, handler) {
+    defineRequestType(name, (nest, content, source, callback) => {
+        try {
+            Promise.resolve(handler(nest, content, source))
+                // if the promise is resolved, assign the response to the callback
+                // the first value holds an error(if any)
+                .then(response => callback(null, response),
+                    // if failed, 'report' the error to the callback
+                    failed => callback(failed));
+        } catch (err) {
+            // any other exceptions are also registered
+            callback(err);
+        }
+    });
+}
