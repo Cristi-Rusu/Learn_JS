@@ -141,6 +141,14 @@ class Group {
     [Symbol.iterator]() {
         return new GroupIterator(this);
     }
+    /*
+    The iterator could also be defined with a generator function:
+    function*() {
+        for (let i = 0; i < this.content.length; i++) {
+            yield this.content[i];
+        }
+    }
+    */
 }
 
 const group1 = new Group();
