@@ -182,15 +182,16 @@ function findRoute(from, to, connections) {
 
 function routeRequest(nest, target, type, content) {
     if (nest.neighbors.includes(target)) {
-        request(nest, target, type, content);
-    } else {
-        let via = findRoute(nest.name, target, nest.state.connections);
-        if (!via) throw new Error(`No route to ${target}`);
-        request(nest, via, 'route', { target, type, content });
+        return request(nest, target, type, content);
     }
+    const via = findRoute(nest.name, target, nest.state.connections);
+    if (!via) throw new Error(`No route to ${target}`);
+    return request(nest, via, 'route', { target, type, content });
 }
 
 requestType('route', (nest, { target, type, content }) => (
+    // makes the call to 'request' with the (type = 'route') recursive
+    // and sends the request node by note to the 'target'
     routeRequest(nest, target, type, content)
 ));
 
@@ -204,6 +205,77 @@ everywhere((nest) => {
 // it should first await for it to finish
 // routeRequest(bigOak, 'Church Tower', 'note', 'Incoming jackdaws!');
 
+requestType('storage', (nest, name) => storage(nest, name));
+
+function network(nest) {
+    return Array.from(nest.state.connections.keys());
+}
+
+function findInRemoteStorage(nest, name) {
+    let sources = network(nest).filter(n => n !== nest.name);
+    function next() {
+        if (sources.length === 0) {
+            return Promise.reject(new Error('Not found'));
+        }
+        const source = sources[Math.floor(Math.random() * sources.length)];
+        sources = sources.filter(s => s !== source);
+        return routeRequest(nest, source, 'storage', name)
+            .then(value => (value != null ? value : next()), next);
+    }
+    return next();
+}
+
+function findInStorage(nest, name) {
+    return storage(nest, name).then((found) => {
+        if (found != null) return found;
+        return findInRemoteStorage(nest, name);
+    });
+}
+// async version of 'findInStorage'
+async function findInStorageA(nest, name) {
+    const local = await storage(nest, name);
+    if (local != null) return local;
+
+    let sources = network(nest).filter(n => n !== nest.name);
+    while (sources.length > 0) {
+        const source = sources[Math.floor(Math.random() * sources.length)];
+        sources = sources.filter(s => s !== source);
+        try {
+            // eslint-disable-next-line no-await-in-loop
+            const found = await routeRequest(nest, source, 'storage', name);
+            if (found != null) return found;
+        } catch (e) {
+            console.error(e);
+        }
+    }
+    throw new Error('Not found.');
+}
+
+// Generators
+// when generators are called they return an iterator
+function* powers(n) {
+    for (let current = n; ; current *= n) {
+        yield current;
+    }
+}
+
+for (const power of powers(3)) {
+    if (power > 100) break;
+    console.log(power);
+}
+
+// Event Loop
+
+try {
+    setTimeout(() => {
+        throw new Error('Woosh');
+    });
+} catch (e) {
+    // This will not run, because the program first catches errors(if any)
+    // and after the timeout is done, executes the code inside it
+    console.log('Caught!');
+}
+
 
 // create global variables to be able to access it in the browser's console
 // it is done for debugging purposes
@@ -212,5 +284,11 @@ window.bigOak = bigOak;
 window.availableNeighbors = availableNeighbors;
 window.everywhere = everywhere;
 window.sendGossip = sendGossip;
+window.broadcastConnections = broadcastConnections;
 window.findRoute = findRoute;
 window.routeRequest = routeRequest;
+window.findInStorage = findInStorage;
+window.findInStorageA = findInStorageA;
+window.requestType = requestType;
+window.storage = storage;
+window.request = request;
