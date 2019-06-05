@@ -112,7 +112,8 @@ class Network {
     }
 }
 
-const network = new Network(connections, storageFor);
-export const bigOak = network.nodes['Big Oak'];
-export const everywhere = network.everywhere.bind(network);
-export const defineRequestType = network.defineRequestType.bind(network);
+export const NetWork = new Network(connections, storageFor);
+export const bigOak = NetWork.nodes['Big Oak'];
+export const cowPasture = NetWork.nodes['Cow Pasture'];
+export const everywhere = NetWork.everywhere.bind(NetWork);
+export const defineRequestType = NetWork.defineRequestType.bind(NetWork);

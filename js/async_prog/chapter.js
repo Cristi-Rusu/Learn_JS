@@ -2,7 +2,9 @@
 
 /* Asynchronous Programming */
 
-import { bigOak, defineRequestType, everywhere } from './crow-tech.js';
+import {
+    bigOak, defineRequestType, everywhere, NetWork,
+} from './crow-tech.js';
 
 bigOak.readStorage('food caches', (caches) => {
     const firstCache = caches[0];
@@ -100,13 +102,12 @@ function requestType(name, handler) {
 
 requestType('ping', () => 'pong');
 
-function availableNeighbors(nest) {
+async function availableNeighbors(nest) {
     const requests = nest.neighbors.map(neighbor => (
         request(nest, neighbor, 'ping').then(() => true, () => false)
     ));
-    return Promise.all(requests).then(result => (
-        nest.neighbors.filter((_, i) => result[i])
-    ));
+    const result = await Promise.all(requests);
+    return nest.neighbors.filter((_, i) => result[i]);
 }
 
 console.log(availableNeighbors(bigOak));
@@ -135,17 +136,27 @@ requestType('gossip', (nest, message, source) => {
 
 // sendGossip(bigOak, 'Kids with airgun in the park.');
 
-// sends the nest's connections to it's neighbors, except for the source
-function broadcastConnections(nest, name, exceptFor = null) {
-    for (const neighbor of nest.neighbors) {
+async function broadcastConnections(nest, name, exceptFor = null) {
+    const requests = nest.neighbors.map((neighbor) => {
         if (neighbor !== exceptFor) {
-            request(nest, neighbor, 'connections', {
-                // the nest's connections
+            return request(nest, neighbor, 'connections', {
                 name,
                 neighbors: nest.state.connections.get(name),
-            });
+            }).then(() => `Sent connections from ${nest.name} to ${neighbor}.`,
+                () => `Failed to send data from ${nest.name} to ${neighbor}.`);
         }
-    }
+    });
+    return Promise.all(requests);
+}
+
+async function updateConnections() {
+    const requests = Object.values(NetWork.nodes).map((nest) => {
+        nest.state.connections = new Map();
+        nest.state.connections.set(nest.name, nest.neighbors);
+        return broadcastConnections(nest, nest.name);
+    });
+    const result = await Promise.all(requests);
+    return result;
 }
 
 requestType('connections', (nest, { name, neighbors }, source) => {
@@ -189,21 +200,21 @@ function routeRequest(nest, target, type, content) {
     return request(nest, via, 'route', { target, type, content });
 }
 
+async function routeReqUpdate(nest, target, type, content) {
+    await updateConnections();
+    routeRequest(nest, target, type, content);
+}
+
 requestType('route', (nest, { target, type, content }) => (
     // makes the call to 'request' with the (type = 'route') recursive
     // and sends the request node by note to the 'target'
     routeRequest(nest, target, type, content)
 ));
 
-everywhere((nest) => {
-    nest.state.connections = new Map();
-    nest.state.connections.set(nest.name, nest.neighbors);
-    // send the nest's connections to all the other nests in the network
-    broadcastConnections(nest, nest.name);
-});
-// this function call depends on the broadcastConnection()
-// it should first await for it to finish
-// routeRequest(bigOak, 'Church Tower', 'note', 'Incoming jackdaws!');
+// this function call depends on the updateConnection()
+// it first awaits for it to finish and then executes
+// it is very BUGGY now
+// routeReqUpdate(bigOak, 'Church Tower', 'note', 'Incoming jackdaws!');
 
 requestType('storage', (nest, name) => storage(nest, name));
 
@@ -275,20 +286,55 @@ try {
     // and after the timeout is done, executes the code inside it
     console.log('Caught!');
 }
+// the console.log is added to the callback que
+// that's why it doesn't log right away
+Promise.resolve('Done.').then(console.log);
+console.log('Me first!');
 
+// Asynchronous bugs
+function anyStorage(nest, source, name) {
+    if (source === nest.name) return storage(nest, name);
+    return routeRequest(nest, source, 'storage', name);
+}
+// returns the line of the request that took the longer to execute
+// expected to return the list of all the nests in the network
+// 'B' stands for BUGGY
+async function chicksB(nest, year) {
+    let list = '';
+    await Promise.all(network(nest).map(async (name) => {
+        list += `${name}: ${
+            await anyStorage(nest, name, `chicks in ${year}`)
+        }\n`;
+    }));
+    return list;
+}
+
+async function chicks(nest, year) {
+    const lines = network(nest).map(async name => (
+        `${name}: ${
+            await anyStorage(nest, name, `chicks in ${year}`)
+        }`
+    ));
+    return (await Promise.all(lines)).join('\n');
+}
 
 // create global variables to be able to access it in the browser's console
 // it is done for debugging purposes
 // leaving imported/module variables in the global scope is a bad practice
 window.bigOak = bigOak;
+window.NetWork = NetWork;
 window.availableNeighbors = availableNeighbors;
 window.everywhere = everywhere;
 window.sendGossip = sendGossip;
 window.broadcastConnections = broadcastConnections;
+window.updateConnections = updateConnections;
 window.findRoute = findRoute;
 window.routeRequest = routeRequest;
+window.routeReqUpdate = routeReqUpdate;
 window.findInStorage = findInStorage;
 window.findInStorageA = findInStorageA;
 window.requestType = requestType;
 window.storage = storage;
 window.request = request;
+window.chicksB = chicksB;
+window.chicks = chicks;
