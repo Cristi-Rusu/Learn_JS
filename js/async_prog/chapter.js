@@ -145,6 +145,7 @@ async function broadcastConnections(nest, name, exceptFor = null) {
             }).then(() => `Sent connections from ${nest.name} to ${neighbor}.`,
                 () => `Failed to send data from ${nest.name} to ${neighbor}.`);
         }
+        return null;
     });
     return Promise.all(requests);
 }
@@ -364,4 +365,3 @@ window.chicks = chicks;
 window.anyStorage = anyStorage;
 window.locateScalpel = locateScalpel;
 window.locateScalpel2 = locateScalpel2;
-window.soon = soon;

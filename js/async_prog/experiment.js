@@ -18,7 +18,7 @@ async function main() {
     log2();
 }
 
-// main();
+main();
 
 // Promise.all like function
 function PromiseAll(promises) {
