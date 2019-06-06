@@ -292,6 +292,7 @@ Promise.resolve('Done.').then(console.log);
 console.log('Me first!');
 
 // Asynchronous bugs
+//
 function anyStorage(nest, source, name) {
     if (source === nest.name) return storage(nest, name);
     return routeRequest(nest, source, 'storage', name);
@@ -318,6 +319,28 @@ async function chicks(nest, year) {
     return (await Promise.all(lines)).join('\n');
 }
 
+// async function to locate the scalpel from any nest
+async function locateScalpel(nest) {
+    let location = await anyStorage(nest, nest.name, 'scalpel');
+    while (nest.name !== location) {
+        // gets the nest by it's name
+        nest = NetWork.nodes[location];
+        // eslint-disable-next-line no-await-in-loop
+        location = await anyStorage(nest, nest.name, 'scalpel');
+    }
+    return location;
+}
+// 'locateScalpel' version without async/await syntax
+function locateScalpel2(nest) {
+    return anyStorage(nest, nest.name, 'scalpel').then((location) => {
+        if (nest.name === location) {
+            return location;
+        }
+        // 'NetWork.nodes[location]' gets the nest by it's name
+        return locateScalpel2(NetWork.nodes[location]);
+    });
+}
+
 // create global variables to be able to access it in the browser's console
 // it is done for debugging purposes
 // leaving imported/module variables in the global scope is a bad practice
@@ -338,3 +361,7 @@ window.storage = storage;
 window.request = request;
 window.chicksB = chicksB;
 window.chicks = chicks;
+window.anyStorage = anyStorage;
+window.locateScalpel = locateScalpel;
+window.locateScalpel2 = locateScalpel2;
+window.soon = soon;
