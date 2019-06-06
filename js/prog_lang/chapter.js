@@ -58,6 +58,16 @@ const prog6 = {
       print("Prog6 -> Array sum:", sum(array(1, 2, 3))))
     `,
 };
+const prog7 = {
+    name: 'Change x value in the outer scope:',
+    code: `
+    do(define(x, 4),
+                           # changes 'x' in the outer scope
+       define(setx, fun(val, set(x, val))),
+       setx(50),
+       print("Prog7 -> Change 'x' in the outer scope:", x))
+    `,
+};
 
 //
 // ─── PARSER ─────────────────────────────────────────────────────────────────────
@@ -296,3 +306,4 @@ function run(program) {
 run(prog4.code);
 run(prog5.code);
 run(prog6.code);
+run(prog7.code);
