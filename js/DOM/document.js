@@ -127,3 +127,98 @@ function animate(time, lastTime) {
 // notice how the first second the animation is jittery because of the JS execution
 // the frames are refreshed when no JS is being executed
 requestAnimationFrame(animate);
+
+const mountains = [
+    { name: 'Kilimanjaro', height: 5895, place: 'Tanzania' },
+    { name: 'Everest', height: 8848, place: 'Nepal' },
+    { name: 'Mount Fuji', height: 3776, place: 'Japan' },
+    { name: 'Vaalserberg', height: 323, place: 'Netherlands' },
+    { name: 'Denali', height: 6168, place: 'United States' },
+    { name: 'Popocatepetl', height: 5465, place: 'Mexico' },
+    { name: 'Mont Blanc', height: 4808, place: 'Italy/France' },
+];
+
+// create a table given an array of objects
+function createTable(tableArray) {
+    // check the structure of the table array
+    // compare each object from the array with the next one
+    for (let i = 0; i < tableArray.length - 1; i++) {
+        const currentObjKeys = Object.keys(tableArray[i]);
+        const nextObjKeys = Object.keys(tableArray[i + 1]);
+        if (currentObjKeys.length !== nextObjKeys.length) {
+            throw new Error('Table elements should have the same column length');
+        }
+        for (let j = 0; j < currentObjKeys.length; j++) {
+            if (currentObjKeys[j] !== nextObjKeys[j]) {
+                throw new Error('Table elements should have the same property name');
+            }
+        }
+    }
+    // create the table
+    const table = document.createElement('table');
+    // create header(they are the same for every obj in the array)
+    const headings = Object.keys(tableArray[0]);
+    const headRow = document.createElement('tr');
+    for (const heading of headings) {
+        const th = document.createElement('th');
+        th.innerHTML = heading;
+        headRow.appendChild(th);
+    }
+    table.appendChild(headRow);
+    // create the rows
+    for (let i = 0; i < tableArray.length; i++) {
+        const tr = document.createElement('tr');
+        const rowData = Object.values(tableArray[i]);
+        // create the columns
+        for (let j = 0; j < rowData.length; j++) {
+            const td = document.createElement('td');
+            if (typeof rowData[j] === 'number') {
+                td.style.textAlign = 'right';
+            }
+            td.innerHTML = rowData[j];
+            tr.appendChild(td);
+        }
+        table.appendChild(tr);
+    }
+    return table;
+}
+const mountainTable = createTable(mountains);
+document.getElementById('mountains').appendChild(mountainTable);
+
+// recursive function to find elements by tag name, given a parent node
+function byTagName(node, tagName) {
+    const array = [];
+    tagName = tagName.toUpperCase();
+    function explore(elem) {
+        for (let i = 0; i < elem.children.length; i++) {
+            const child = elem.children[i];
+            if (child.tagName === tagName) array.push(child);
+            if (child.children.length !== 0) explore(child);
+        }
+    }
+    explore(node);
+    return array;
+}
+console.log(byTagName(document.body, 'td'));
+
+// animate the cat and hat
+const wizCat = document.getElementById('wizard-cat');
+const wizHat = document.getElementById('cats-hat');
+let ang = Math.PI / 2;
+function animateWiz(time, lastTime) {
+    if (lastTime != null) {
+        // handle the speed of the animation
+        ang += (time - lastTime) * 0.0015;
+    }
+    // change the position of the cat on each frame refresh
+    // describe an ellipse
+    wizCat.style.top = `${-Math.sin(ang) * 40}px`;
+    wizCat.style.left = `${-Math.cos(ang) * 200}px`;
+    wizHat.style.top = `${(-Math.sin(ang) * 40 - 40) + Math.cos(ang) * 75}px`;
+    wizHat.style.left = `${(-Math.cos(ang) * 200 - 75) + Math.sin(ang) * 75}px`;
+    // the next animation frame will take the current time as the 'lastTime'
+    requestAnimationFrame(newTime => animateWiz(newTime, time));
+}
+// notice how the first second the animation is jittery because of the JS execution
+// the frames are refreshed when no JS is being executed
+requestAnimationFrame(animateWiz);
