@@ -5,10 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Events</title>
+    <style>
+        #dot-table {
+            height: 200px;
+            background: beige;
+        }
+        .dot {
+            height: 8px; width: 8px;
+            border-radius: 4px;
+            background: blue;
+            position: absolute;
+        }
+        .circle {
+            position: absolute; display: block;
+            border: 2px solid red; border-radius: 50px;
+            height: 100px; width: 100px;
+        }
+        #scroll-section {
+            border: 1px solid gray;
+            position: relative;
+        }
+        #scroll-section #scroll-text {
+            overflow: scroll;
+            height: 200px;
+        }
+        #progress-bar {
+            border-bottom: 2px solid blue;
+            width: 0;
+            position: absolute;
+        }
+    </style>
 </head>
 <body>
     <button id="btn-mousedown">Click ME any way you want</button>
     <p id="parag-click">Paragraph click handler <button id="btn-click">button click</button></p>
+
+    <p>Click on this area to add a blue dot.</p>
+    <div id="dot-table"></div>
+
+    <p>Drag the bar to change its width:</p>
+    <div id="bar" style="background: orange; width: 60px; height: 20px;"></div>
+
+    <p>Touch this page.</p>
+
+    <div id="scroll-section">
+        <div id="progress-bar"></div>
+        <div id="scroll-text">Lorem ipsum dolor sit amet consectetur adipisicing elit. Sint amet consequuntur itaque debitis minus atque accusantium aliquam aut inventore vero! Est officiis eum similique perspiciatis harum doloribus, voluptate voluptatem nulla alias odio maxime excepturi modi soluta provident placeat quaerat expedita dolores at iste rerum corporis perferendis minus ullam adipisci. Animi possimus tempora libero delectus accusantium quam vitae explicabo doloremque beatae dolore. Iusto unde doloremque corporis aliquam. Sapiente nam inventore esse hic eligendi minus ipsum aperiam corrupti unde aspernatur qui quaerat consectetur sit quisquam totam illo, at itaque nesciunt ea iure eius aliquid, architecto maiores nulla. Provident maxime reiciendis eius, distinctio, minima id harum perferendis cumque delectus, voluptas quasi vero illum aliquam aliquid doloribus vel ex. Iure a quis dolor nisi nesciunt in unde voluptatum fugit reprehenderit labore magnam dolorum sit inventore architecto repellat praesentium accusantium, ipsa velit aliquid assumenda cupiditate. Quisquam rerum iste delectus expedita sequi, sapiente labore. Nesciunt obcaecati ducimus fuga nulla numquam placeat! Quos ratione necessitatibus atque molestias quidem commodi quod velit natus vel sapiente! Illo molestiae nemo sit aut natus necessitatibus voluptatibus dolore quisquam molestias animi eaque delectus magnam, a, ab officia quaerat rem. Dolores unde ratione error sequi totam minus earum architecto dolore et facere aspernatur veniam tenetur esse explicabo, quasi eveniet exercitationem quidem ab! Repellendus sit non cum aliquid assumenda dicta minus numquam fugit fuga aperiam. Maxime, incidunt fugiat illum obcaecati rem expedita totam debitis molestias at! Nobis, aspernatur labore! Aliquid ipsa voluptatibus recusandae suscipit, at error harum porro sed quae eum voluptatum inventore iusto fugiat tenetur quod! Recusandae, esse, error quis sed laudantium beatae animi cupiditate reiciendis officiis hic aut eaque modi voluptas consectetur optio nostrum quo. Natus eius quos et at ducimus beatae reprehenderit, debitis pariatur, consequuntur ab nisi assumenda! Praesentium laboriosam voluptatibus nulla hic, reiciendis, officia enim recusandae vel ipsa possimus dolore. Lorem ipsum dolor sit amet consectetur adipisicing elit. Ducimus, in! Eius in voluptate debitis corrupti quo architecto beatae magnam sed voluptatibus nemo ab maiores eaque tempora exercitationem laborum at odit, illo dicta numquam inventore iure incidunt, culpa mollitia quos? Aut vitae voluptates ullam esse et inventore labore modi ex accusantium nulla, provident, iusto perspiciatis pariatur ducimus repellat cum officia consectetur suscipit tempora molestias dignissimos? Hic dolorum magni vitae sunt iusto quidem pariatur eum ratione? Tempore atque officiis reiciendis illo repellat vel. Nulla eligendi aperiam, quis fuga quisquam minus exercitationem. Placeat fugit dicta impedit doloremque dignissimos. Eveniet culpa quis a blanditiis delectus, recusandae natus accusantium obcaecati! Architecto quidem sit, quaerat assumenda harum odio ut illum provident sed repellat perspiciatis, dolorem necessitatibus id. Sint deleniti iure iusto quibusdam, est qui incidunt ex! Soluta officia, nam delectus quidem odit, placeat ratione doloribus, sequi explicabo autem aspernatur dolorum repellat. Error, alias dignissimos dicta voluptas iure, illo laborum sed nihil velit aspernatur veniam ratione dolorum officia est tempora minus consequatur. Praesentium porro dignissimos nulla debitis, in accusantium? Ad aliquam odit repellat dolorum perspiciatis debitis voluptate necessitatibus voluptatem eos explicabo corporis totam repudiandae quos molestias impedit voluptates ipsam similique delectus nam, quae perferendis! Dolorem amet quis numquam est, nulla ullam veniam nesciunt earum voluptate alias hic iure veritatis molestias provident, asperiores dolor. Ipsa necessitatibus expedita a inventore, dolore qui tempora optio nisi odit non praesentium? Officia adipisci velit minima suscipit et ut, corporis quod nihil, quis quia ducimus! Cupiditate necessitatibus maxime in! Illo perspiciatis, harum quam totam commodi deserunt voluptate officia voluptatibus quod odio aut id mollitia reiciendis ut excepturi dolores, inventore at consequuntur atque quaerat! Ipsam iusto sed, possimus, quod commodi qui delectus voluptatem inventore, quisquam sequi dolorem quos natus temporibus consectetur suscipit laborum eum debitis dicta eligendi! Iste eaque veniam recusandae accusamus esse delectus.</div>
+    </div>
+
+    <p>Name: <input type="text" data-help="Your full name"></p>
+    <p>Age: <input type="text" data-help="Your age in years"></p>
+    <p id="help"></p>
+
+    <textarea cols="30" rows="10" placeholder="Type something..."></textarea>
+
+    <p id="mouse-poz"></p>
 
     <script src="./events.js"></script>
 </body>
