@@ -154,3 +154,67 @@ window.addEventListener('mousemove', (event) => {
     }
     scheduled = event;
 });
+
+const balloon = document.getElementById('balloon');
+let balloonSize;
+function setBalloonSize(newSize) {
+    balloonSize = newSize;
+    balloon.style.fontSize = `${newSize}px`;
+    return newSize;
+}
+setBalloonSize(20);
+// inflate/deflate balloon with arrow keys
+// explode at a certain size
+function handleArrows(event) {
+    if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (balloonSize > 100) {
+            balloon.textContent = '💥';
+            setTimeout(() => balloon.remove(), 250);
+            window.removeEventListener('keydown', handleArrows);
+        } else {
+            // inflate by 10%
+            setBalloonSize(balloonSize * 1.1);
+        }
+    } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        // deflate by 10%
+        setBalloonSize(balloonSize * 0.9);
+    }
+}
+window.addEventListener('keydown', handleArrows);
+
+// create mouse trail
+function createTrail(event) {
+    const trail = document.createElement('div');
+    trail.className = 'trail';
+    trail.style.left = `${event.pageX + 3}px`;
+    trail.style.top = `${event.pageY + 3}px`;
+    document.body.appendChild(trail);
+    setTimeout(() => trail.remove(), 250);
+}
+window.addEventListener('mousemove', createTrail);
+
+function asTabs(node) {
+    const tabs = Array.from(node.children).map((elem) => {
+        const tabBtn = document.createElement('button');
+        tabBtn.textContent = elem.getAttribute('data-tabname');
+        const tab = { elem, tabBtn };
+        // eslint-disable-next-line no-use-before-define
+        tabBtn.addEventListener('click', () => selectTab(tab));
+        return tab;
+    });
+    const tabList = document.createElement('div');
+    for (const { tabBtn } of tabs) tabList.appendChild(tabBtn);
+    node.prepend(tabList);
+
+    function selectTab(selectedTab) {
+        for (const tab of tabs) {
+            const selected = tab === selectedTab;
+            tab.elem.style.display = selected ? '' : 'none';
+            tab.tabBtn.style.color = selected ? 'red' : '';
+        }
+    }
+    selectTab(tabs[0]);
+}
+asTabs(document.querySelector('#tab-panel'));

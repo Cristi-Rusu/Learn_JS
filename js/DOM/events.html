@@ -34,6 +34,13 @@
             width: 0;
             position: absolute;
         }
+        .trail {
+            position: absolute;
+            height: 6px;
+            width: 6px;
+            border-radius: 3px;
+            background: teal;
+        }
     </style>
 </head>
 <body>
@@ -60,6 +67,23 @@
     <textarea cols="30" rows="10" placeholder="Type something..."></textarea>
 
     <p id="mouse-poz"></p>
+
+    <p id="balloon">🎈</p>
+
+    <div id="tab-panel">
+        <div data-tabname="one">
+            <p>Tab one</p>
+            <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Ipsam ut fuga labore delectus commodi rerum, ex aperiam eum dignissimos eligendi quis odio iste amet, facilis corporis neque fugit animi! Dolores, magnam pariatur libero nulla quasi tempora obcaecati soluta sit cupiditate.</p>
+        </div>
+        <div data-tabname="two">
+            <p>Tab two</p>
+            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolorem natus veniam delectus, minima adipisci ipsa assumenda tempore quidem perferendis quae suscipit harum repellendus rerum hic dignissimos incidunt pariatur eius facilis! Vero nemo veritatis mollitia voluptate saepe quis iste accusamus autem!</p>
+        </div>
+        <div data-tabname="three">
+            <p>Tab three</p>
+            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Deserunt animi, qui natus officiis illo quisquam aliquam consequuntur ipsa quos itaque, totam earum odit dolorum perspiciatis quis veniam fugit necessitatibus? Delectus distinctio voluptate omnis excepturi, repellendus earum eaque iste odio sunt?</p>
+        </div>
+    </div>
 
     <script src="./events.js"></script>
 </body>
