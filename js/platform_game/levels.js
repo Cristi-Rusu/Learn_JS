@@ -12,7 +12,7 @@
 
 // Levels should not have indented lines
 
-const simpleLevel = `
+const simpleLevelPlan = `
 ......................
 ..#................#..
 ..#..............=.#..

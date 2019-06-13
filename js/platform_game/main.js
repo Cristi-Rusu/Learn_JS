@@ -4,7 +4,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 //
 
-/* global simpleLevel:true */
+/* global simpleLevelPlan:true */
 
 /**
  *  Rules:
@@ -145,6 +145,113 @@ class State {
 //
 // ────────────────────────────────────────────────────────── READING A LEVEL ─────
 //
+//
+// ─── DRAWING ────────────────────────────────────────────────────────────────────
+//
 
-const lvl1 = new Level(simpleLevel);
-console.log(lvl1);
+// the number of pixels a single unit takes up on the screen
+const SCALE = 20;
+
+/**
+ * Creates a DOM element and returns it
+ * @param {String} name tag name
+ * @param {Object} attrs An object containing the attribute names as keys and the attribute values as properties
+ * @param  {...Node} children child nodes of the created element
+ */
+function elt(name, attrs, ...children) {
+    const dom = document.createElement(name);
+    for (const attr of Object.keys(attrs)) {
+        dom.setAttribute(attr, attrs[attr]);
+    }
+    for (const child of children) {
+        dom.appendChild(child);
+    }
+    return dom;
+}
+
+// creates a table which draws the static blocks from the given level
+function drawGrid(level) {
+    return elt('table', {
+        class: 'background',
+        width: `${level.width * SCALE}px`,
+        // pass as the third argument of 'elt' all the 'tr' elements created using the spread operator(...)
+    }, ...level.rows.map(row => (
+        elt('tr', { style: `height: ${SCALE}px` },
+            // each row contains the 'type' information of the grid block('td' in this case)
+            ...row.map(type => elt('td', { class: type })))
+    )));
+}
+
+function drawActors(actors) {
+    return elt('div', {}, ...actors.map((actor) => {
+        // our actors will be rectangles
+        const rect = elt('div', { class: `actor ${actor.type}` });
+        rect.style.width = `${actor.size.x * SCALE}px`;
+        rect.style.height = `${actor.size.y * SCALE}px`;
+        rect.style.left = `${actor.pos.x * SCALE}px`;
+        rect.style.top = `${actor.pos.y * SCALE}px`;
+        return rect;
+    }));
+}
+
+// a display is created by giving it a parent node and a level to draw
+class DOMDisplay {
+    constructor(parent, level) {
+        this.dom = elt('div', { class: 'game' }, drawGrid(level));
+        this.actorLayer = null;
+        parent.appendChild(this.dom);
+    }
+
+    scrollPlayerIntoView(state) {
+        const width = this.dom.clientWidth;
+        const height = this.dom.clientHeight;
+        const marginX = width / 3;
+        const marginY = height / 3;
+        // The viewport
+        // the distance scrolled from the top-left corner
+        const left = this.dom.scrollLeft;
+        const top = this.dom.scrollTop;
+        const right = width + left;
+        const bottom = width + top;
+
+        const { player } = state;
+        // get the center point of the player body
+        const center = player.pos.plus(player.size.times(0.5)).times(SCALE);
+
+        // scroll the viewport if the player is near the edges(les than 1/3 of viewport)
+        if (center.x < left + marginX) {
+            this.dom.scrollLeft = center.x - marginX;
+        } else if (center.x > right - marginX) {
+            // subtract the 'width' because we set the Left scroll position
+            this.dom.scrollLeft = center.x + marginX - width;
+        }
+        if (center.y < top + marginY) {
+            this.dom.scrollTop = center.y - marginY;
+        } else if (center.y > bottom - marginY) {
+            // subtract the 'height' because we set the Top scroll position
+            this.dom.scrollTop = center.y + marginY - height;
+        }
+    }
+
+    syncState(state) {
+        // create a new actorLayer
+        if (this.actorLayer) this.actorLayer.remove();
+        this.actorLayer = drawActors(state.actors);
+        this.dom.appendChild(this.actorLayer);
+        // update the background color depending on the status
+        this.dom.className = `game ${state.status}`;
+        this.scrollPlayerIntoView(state);
+    }
+
+    clear() { this.dom.remove(); }
+}
+
+//
+// ────────────────────────────────────────────────────────────────── DRAWING ─────
+//
+
+const simpleLevel = new Level(simpleLevelPlan);
+console.log(simpleLevel);
+
+const display = new DOMDisplay(document.body, simpleLevel);
+display.syncState(State.start(simpleLevel));
