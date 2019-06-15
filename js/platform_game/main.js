@@ -35,6 +35,14 @@ function trackKeys(keys) {
 }
 const arrowKeys = trackKeys(['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown']);
 
+// check if 2 actors overlap on both axis
+function overlap(actor1, actor2) {
+    return actor1.pos.x + actor1.size.x > actor2.pos.x
+        && actor1.pos.x < actor2.pos.x + actor2.size.x
+        && actor1.pos.y + actor1.size.y > actor2.pos.y
+        && actor1.pos.y < actor2.pos.y + actor2.size.y;
+}
+
 //
 // ─── ACTORS ─────────────────────────────────────────────────────────────────────
 //
@@ -56,6 +64,7 @@ class Vec {
 }
 
 const PLAYER_XSPEED = 7;
+const LAVA_SLOWDOWN = { x: 7, y: 1.6 };
 const GRAVITY = 30;
 const JUMP_SPEED = 17;
 class Player {
@@ -68,12 +77,37 @@ class Player {
         return new Player(pos.plus(new Vec(0, -0.5)), new Vec(0, 0));
     }
 
+    touchesLava(state) {
+        if (state.level.touches(this.pos, this.size, 'lava')) {
+            return true;
+        }
+        for (const actor of state.actors) {
+            if (actor.type === 'lava' && overlap(actor, this)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // returns the speed on the 'x' axis
+    getXSpeed(state, keys) {
+        let speed = 0;
+        if (keys.ArrowLeft) speed -= PLAYER_XSPEED;
+        if (keys.ArrowRight) speed += PLAYER_XSPEED;
+        if (this.touchesLava(state)) speed /= LAVA_SLOWDOWN.x;
+        return speed;
+    }
+
+    // the time in the air is not controlled, so we don't need 'keys'
+    getYSpeed(state, time) {
+        let speed = this.speed.y + GRAVITY * time;
+        if (this.touchesLava(state)) speed /= LAVA_SLOWDOWN.y;
+        return speed;
+    }
+
     update(time, state, keys) {
-        let xSpeed = 0;
-        // set the player speed the player on key press
-        if (keys.ArrowLeft) xSpeed -= PLAYER_XSPEED;
-        if (keys.ArrowRight) xSpeed += PLAYER_XSPEED;
         let { pos } = this;
+        const xSpeed = this.getXSpeed(state, keys);
         const movedX = pos.plus(new Vec(xSpeed * time, 0));
         // if 'movedX' doesn't intersect any wall, set the players position to 'movedX'
         if (!state.level.touches(movedX, this.size, 'wall')) {
@@ -81,7 +115,8 @@ class Player {
         }
         // adding the 'GRAVITY' to 'ySpeed' means that the speed is directed down
         // (the 'y' axis is inverted in our game)
-        let ySpeed = this.speed.y + GRAVITY * time;
+        let ySpeed = this.getYSpeed(state, time);
+        // if the player touches lava, reduce it's speed on the 'y' axis
         const movedY = pos.plus(new Vec(0, ySpeed * time));
         // if the computed place 'movedY' doesn't hit any walls, "move the player to that position"
         if (!state.level.touches(movedY, this.size, 'wall')) {
@@ -95,6 +130,7 @@ class Player {
         } else {
             ySpeed = 0;
         }
+        // if the player falls into lava, reduce it's vertical speed
         return new Player(pos, new Vec(xSpeed, ySpeed));
     }
 }
@@ -182,14 +218,6 @@ class Coin {
 }
 Coin.prototype.type = 'coin';
 Coin.prototype.size = new Vec(0.6, 0.6);
-
-// check if 2 actors overlap on both axis
-function overlap(actor1, actor2) {
-    return actor1.pos.x + actor1.size.x > actor2.pos.x
-        && actor1.pos.x < actor2.pos.x + actor2.size.x
-        && actor1.pos.y + actor1.size.y > actor2.pos.y
-        && actor1.pos.y < actor2.pos.y + actor2.size.y;
-}
 
 const levelChars = {
     '.': 'empty',
@@ -470,7 +498,7 @@ console.log(simpleLevel);
 runGame(GAME_LEVELS, DOMDisplay);
 
 // TODO:
-// 1. Game Over
+// IN PROCESS: Game Over(3 lives per level)
 // 2. Pausing the game
-// 3. Slow down motion in lava
+// DONE: Slow down motion in lava
 // 4. A Monster which moves and disappears if the player jumps on it
