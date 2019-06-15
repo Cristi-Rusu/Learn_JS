@@ -4,19 +4,42 @@
 // ────────────────────────────────────────────────────────────────────────────
 //
 
-/* global simpleLevelPlan:true */
+/* eslint-disable no-use-before-define */
+/* eslint-disable class-methods-use-this */
+/* eslint-disable no-await-in-loop */
+/* global simpleLevelPlan, GAME_LEVELS:true */
 
-/**
+/*
  *  Rules:
  *  1. The player should avoid lava(red stuff) and monsters
  *  2. Once it touches one of these, the level resets
  *  3. To complete a level, all coins should be collected
  */
 
+// ────────────────────────────────────────────────────────────────────────────────
+
+// create an object which tracks one of the specified keys is being pressed
+function trackKeys(keys) {
+    const pressed = Object.create(null);
+    function track(event) {
+        if (keys.includes(event.key)) {
+            // if the 'key' is pressed(event.type === 'keydown'), it's value is true
+            // if the 'key' is left(event.type === 'keyup'), it's value is false
+            pressed[event.key] = event.type === 'keydown';
+            event.preventDefault();
+        }
+    }
+    window.addEventListener('keydown', track);
+    window.addEventListener('keyup', track);
+    return pressed;
+}
+const arrowKeys = trackKeys(['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown']);
+
 //
 // ─── ACTORS ─────────────────────────────────────────────────────────────────────
 //
 
+// rectangle sizes and speeds are described with vectors
 class Vec {
     constructor(x, y) {
         this.x = x;
@@ -32,6 +55,9 @@ class Vec {
     }
 }
 
+const PLAYER_XSPEED = 7;
+const GRAVITY = 30;
+const JUMP_SPEED = 17;
 class Player {
     constructor(pos, speed) {
         this.pos = pos;
@@ -40,6 +66,36 @@ class Player {
 
     static create(pos) {
         return new Player(pos.plus(new Vec(0, -0.5)), new Vec(0, 0));
+    }
+
+    update(time, state, keys) {
+        let xSpeed = 0;
+        // set the player speed the player on key press
+        if (keys.ArrowLeft) xSpeed -= PLAYER_XSPEED;
+        if (keys.ArrowRight) xSpeed += PLAYER_XSPEED;
+        let { pos } = this;
+        const movedX = pos.plus(new Vec(xSpeed * time, 0));
+        // if 'movedX' doesn't intersect any wall, set the players position to 'movedX'
+        if (!state.level.touches(movedX, this.size, 'wall')) {
+            pos = movedX;
+        }
+        // adding the 'GRAVITY' to 'ySpeed' means that the speed is directed down
+        // (the 'y' axis is inverted in our game)
+        let ySpeed = this.speed.y + GRAVITY * time;
+        const movedY = pos.plus(new Vec(0, ySpeed * time));
+        // if the computed place 'movedY' doesn't hit any walls, "move the player to that position"
+        if (!state.level.touches(movedY, this.size, 'wall')) {
+            pos = movedY;
+        // if it does hit something, don't update player's position and modify the 'ySpeed'
+        // if the ArrowUp key is pressed and the player is on the ground(ySpeed > 0)
+        // set it's speed to negative 'JUMP_SPEED' in order to jump
+        } else if (keys.ArrowUp && ySpeed > 0) {
+            ySpeed = -JUMP_SPEED;
+        // else, the player bumped into something, so stop the motion on the 'y' axis
+        } else {
+            ySpeed = 0;
+        }
+        return new Player(pos, new Vec(xSpeed, ySpeed));
     }
 }
 Player.prototype.type = 'player';
@@ -66,10 +122,34 @@ class Lava {
         }
         throw new Error('Unknown Lava type');
     }
+
+    // if the player touches lava, the game is lost
+    collide(state) {
+        return new State(state.level, state.actors, 'lost');
+    }
+
+    update(time, state) {
+        // compute the next position with the state, time and lava's speed
+        const newPos = this.pos.plus(this.speed.times(time));
+        // if the next position doesn't intersect a wall
+        // move the lava block(return a new Lava Object with the new position)
+        if (!state.level.touches(newPos, this.size, 'wall')) {
+            return new Lava(newPos, this.speed, this.reset);
+        }
+        // handle situations when the new position intersects a wall
+        // if this is a dripping lava('v' character)
+        if (this.reset) {
+            return new Lava(this.reset, this.speed, this.reset);
+        }
+        // invert the direction of moving lava blocks
+        return new Lava(this.pos, this.speed.times(-1));
+    }
 }
 Lava.prototype.type = 'lava';
 Lava.prototype.size = new Vec(1, 1);
 
+const WOBBLE_SPEED = 8;
+const WOBBLE_DIST = 0.07;
 class Coin {
     constructor(pos, basePos, wobble) {
         this.pos = pos;
@@ -81,9 +161,35 @@ class Coin {
         const basePos = pos.plus(new Vec(0.2, 0.1));
         return new Coin(basePos, basePos, Math.random() * Math.PI * 2);
     }
+
+    // collect the coin and return a new state
+    // if all coins are collected the level is won
+    collide(state) {
+        const filtered = state.actors.filter(a => a !== this);
+        let { status } = state;
+        if (!filtered.some(a => a.type === 'coin')) status = 'won';
+        return new State(state.level, filtered, status);
+    }
+
+    update(time) {
+        // generate a random wobble and position
+        const wobble = this.wobble + WOBBLE_SPEED * time;
+        const wobblePos = Math.sin(wobble) * WOBBLE_DIST;
+        // move the coin to that position
+        return new Coin(this.basePos.plus(new Vec(0, wobblePos)),
+            this.basePos, wobble);
+    }
 }
 Coin.prototype.type = 'coin';
 Coin.prototype.size = new Vec(0.6, 0.6);
+
+// check if 2 actors overlap on both axis
+function overlap(actor1, actor2) {
+    return actor1.pos.x + actor1.size.x > actor2.pos.x
+        && actor1.pos.x < actor2.pos.x + actor2.size.x
+        && actor1.pos.y + actor1.size.y > actor2.pos.y
+        && actor1.pos.y < actor2.pos.y + actor2.size.y;
+}
 
 const levelChars = {
     '.': 'empty',
@@ -123,6 +229,28 @@ class Level {
             })
         ));
     }
+
+    // tells whether a rectangle specified by a position and it's size
+    // touches a block of a given type
+    touches(pos, size, type) {
+        // get the coordinates for the space occupied by the rectangle
+        const xStart = Math.floor(pos.x);
+        const xEnd = Math.ceil(pos.x + size.x);
+        const yStart = Math.floor(pos.y);
+        const yEnd = Math.ceil(pos.y + size.y);
+
+        for (let y = yStart; y < yEnd; y++) {
+            for (let x = xStart; x < xEnd; x++) {
+                // check if the rectangle is outside the map
+                const isOutside = x < 0 || x >= this.width
+                               || y < 0 || y >= this.height;
+                // get the type of the current block
+                const here = isOutside ? 'wall' : this.rows[y][x];
+                if (here === type) return true;
+            }
+        }
+        return false;
+    }
 }
 
 // persistent state class
@@ -139,6 +267,26 @@ class State {
 
     static start(level) {
         return new State(level, level.startActors, 'playing');
+    }
+
+    update(time, keys) {
+        // update the position of all actors
+        const actors = this.actors.map(actor => actor.update(time, this, keys));
+        let newState = new State(this.level, actors, this.status);
+        if (newState.status !== 'playing') return newState;
+        // if the player touches lava, the game is lost
+        const { player } = newState;
+        if (this.level.touches(player.pos, player.size, 'lava')) {
+            return new State(this.level, actors, 'lost');
+        }
+        // if the player touches(overlaps) any other actor, execute the collision outcome
+        // e.g. a coin is collected; if it touched a moving lava, the level is lost
+        for (const actor of actors) {
+            if (actor !== player && overlap(actor, player)) {
+                newState = actor.collide(newState);
+            }
+        }
+        return newState;
     }
 }
 
@@ -202,6 +350,8 @@ class DOMDisplay {
         parent.appendChild(this.dom);
     }
 
+    clear() { this.dom.remove(); }
+
     scrollPlayerIntoView(state) {
         const width = this.dom.clientWidth;
         const height = this.dom.clientHeight;
@@ -242,16 +392,85 @@ class DOMDisplay {
         this.dom.className = `game ${state.status}`;
         this.scrollPlayerIntoView(state);
     }
-
-    clear() { this.dom.remove(); }
 }
 
 //
 // ────────────────────────────────────────────────────────────────── DRAWING ─────
 //
+//
+// ─── RUNNING THE GAME ───────────────────────────────────────────────────────────
+//
+
+// helper(wrapper) function to animate the elements on the page
+// the animation stops when the 'frameFunc' returns false
+function runAnimation(frameFunc) {
+    let lastTime = null;
+    function frame(time) {
+        if (lastTime != null) {
+            // use the Math.min function to counter the situations
+            // when the browser tab/window is hidden and the difference
+            // between 'time' and 'lastTime' gets ridiculously high
+            // also convert milliseconds to seconds
+            const timeStep = Math.min(time - lastTime, 100) / 1000;
+            if (frameFunc(timeStep) === false) return;
+        }
+        lastTime = time;
+        requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+}
+
+/**
+ * Returns a promise which resolves with the end-game status('lost' || 'won')
+ * @param {instanceof Level} level an argument created with 'Level' constructor
+ * @param {Object} Display a constructor to draw the level
+ */
+function runLevel(level, Display) {
+    const display = new Display(document.body, level);
+    let state = State.start(level);
+    // it's used to pause 1sec when a level is completed(lost or won)
+    let ending = 1;
+    return new Promise((resolve) => {
+        runAnimation((time) => {
+            state = state.update(time, arrowKeys);
+            display.syncState(state);
+            // if the status is playing, continue the animation
+            if (state.status === 'playing') {
+                return true;
+            }
+            // by subtracting the step of time from 'ending'
+            // we give the player 1sec to observe the changes after winning/losing a level
+            if (ending > 0) {
+                ending -= time;
+                return true;
+            }
+            // after 1sec, clear the level and stop the animation
+            display.clear();
+            resolve(state.status);
+            return false;
+        });
+    });
+}
+
+async function runGame(plans, Display) {
+    for (let level = 0; level < plans.length;) {
+        const status = await runLevel(new Level(plans[level]), Display);
+        if (status === 'won') level += 1;
+    }
+    console.log('You\'ve won!');
+}
+
+//
+// ───────────────────────────────────────────────────────── RUNNING THE GAME ─────
+//
 
 const simpleLevel = new Level(simpleLevelPlan);
 console.log(simpleLevel);
 
-const display = new DOMDisplay(document.body, simpleLevel);
-display.syncState(State.start(simpleLevel));
+runGame(GAME_LEVELS, DOMDisplay);
+
+// TODO:
+// 1. Game Over
+// 2. Pausing the game
+// 3. Slow down motion in lava
+// 4. A Monster which moves and disappears if the player jumps on it
