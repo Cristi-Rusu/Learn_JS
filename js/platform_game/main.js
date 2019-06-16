@@ -161,7 +161,7 @@ class Lava {
 
     // if the player touches lava, the game is lost
     collide(state) {
-        return new State(state.level, state.actors, 'lost');
+        return new State(state.level, state.actors, 'lost', state.lives - 1);
     }
 
     update(time, state) {
@@ -204,7 +204,7 @@ class Coin {
         const filtered = state.actors.filter(a => a !== this);
         let { status } = state;
         if (!filtered.some(a => a.type === 'coin')) status = 'won';
-        return new State(state.level, filtered, status);
+        return new State(state.level, filtered, status, state.lives);
     }
 
     update(time) {
@@ -283,29 +283,30 @@ class Level {
 
 // persistent state class
 class State {
-    constructor(level, actors, status) {
+    constructor(level, actors, status, lives) {
         this.level = level;
         this.actors = actors;
         this.status = status;
+        this.lives = lives;
     }
 
     get player() {
         return this.actors.find(a => a.type === 'player');
     }
 
-    static start(level) {
-        return new State(level, level.startActors, 'playing');
+    static start(level, lives = 3) {
+        return new State(level, level.startActors, 'playing', lives);
     }
 
     update(time, keys) {
         // update the position of all actors
         const actors = this.actors.map(actor => actor.update(time, this, keys));
-        let newState = new State(this.level, actors, this.status);
+        let newState = new State(this.level, actors, this.status, this.lives);
         if (newState.status !== 'playing') return newState;
         // if the player touches lava, the game is lost
         const { player } = newState;
         if (this.level.touches(player.pos, player.size, 'lava')) {
-            return new State(this.level, actors, 'lost');
+            return new State(this.level, actors, 'lost', this.lives - 1);
         }
         // if the player touches(overlaps) any other actor, execute the collision outcome
         // e.g. a coin is collected; if it touched a moving lava, the level is lost
@@ -370,25 +371,38 @@ function drawActors(actors) {
     }));
 }
 
+function drawLives(number) {
+    const lives = [];
+    for (let i = 0; i < 3; i++) {
+        const life = elt('div', { class: 'life' });
+        if (i < number) life.classList = 'life active';
+        life.style.left = `${10 + 26 * i}px`;
+        lives.push(life);
+    }
+    return elt('div', { class: 'lives' }, ...lives);
+}
+
 // a display is created by giving it a parent node and a level to draw
 class DOMDisplay {
-    constructor(parent, level) {
-        this.dom = elt('div', { class: 'game' }, drawGrid(level));
+    constructor(parent, level, lives) {
+        this.lives = lives;
+        this.level = elt('div', { class: 'level' }, drawGrid(level));
+        this.game = elt('div', { class: 'game' }, this.level);
         this.actorLayer = null;
-        parent.appendChild(this.dom);
+        this.livesLayer = null;
+        parent.appendChild(this.game);
     }
 
-    clear() { this.dom.remove(); }
+    clear() { this.game.remove(); }
 
     scrollPlayerIntoView(state) {
-        const width = this.dom.clientWidth;
-        const height = this.dom.clientHeight;
-        const marginX = width / 3;
-        const marginY = height / 3;
+        const width = this.level.clientWidth;
+        const height = this.level.clientHeight;
+        const margin = width / 3;
         // The viewport
         // the distance scrolled from the top-left corner
-        const left = this.dom.scrollLeft;
-        const top = this.dom.scrollTop;
+        const left = this.level.scrollLeft;
+        const top = this.level.scrollTop;
         const right = width + left;
         const bottom = width + top;
 
@@ -397,27 +411,30 @@ class DOMDisplay {
         const center = player.pos.plus(player.size.times(0.5)).times(SCALE);
 
         // scroll the viewport if the player is near the edges(les than 1/3 of viewport)
-        if (center.x < left + marginX) {
-            this.dom.scrollLeft = center.x - marginX;
-        } else if (center.x > right - marginX) {
+        if (center.x < left + margin) {
+            this.level.scrollLeft = center.x - margin;
+        } else if (center.x > right - margin) {
             // subtract the 'width' because we set the Left scroll position
-            this.dom.scrollLeft = center.x + marginX - width;
+            this.level.scrollLeft = center.x + margin - width;
         }
-        if (center.y < top + marginY) {
-            this.dom.scrollTop = center.y - marginY;
-        } else if (center.y > bottom - marginY) {
+        if (center.y < top + margin) {
+            this.level.scrollTop = center.y - margin;
+        } else if (center.y > bottom - margin) {
             // subtract the 'height' because we set the Top scroll position
-            this.dom.scrollTop = center.y + marginY - height;
+            this.level.scrollTop = center.y + margin - height;
         }
     }
 
     syncState(state) {
+        if (this.livesLayer) this.livesLayer.remove();
+        this.livesLayer = drawLives(state.lives);
+        this.game.prepend(this.livesLayer);
         // create a new actorLayer
         if (this.actorLayer) this.actorLayer.remove();
         this.actorLayer = drawActors(state.actors);
-        this.dom.appendChild(this.actorLayer);
+        this.level.appendChild(this.actorLayer);
         // update the background color depending on the status
-        this.dom.className = `game ${state.status}`;
+        this.level.className = `level ${state.status}`;
         this.scrollPlayerIntoView(state);
     }
 }
@@ -453,9 +470,9 @@ function runAnimation(frameFunc) {
  * @param {instanceof Level} level an argument created with 'Level' constructor
  * @param {Object} Display a constructor to draw the level
  */
-function runLevel(level, Display) {
-    const display = new Display(document.body, level);
-    let state = State.start(level);
+function runLevel(level, Display, lives) {
+    const display = new Display(document.body, level, lives);
+    let state = State.start(level, lives);
     // it's used to pause 1sec when a level is completed(lost or won)
     let ending = 1;
     return new Promise((resolve) => {
@@ -472,7 +489,7 @@ function runLevel(level, Display) {
                 ending -= time;
                 return true;
             }
-            // after 1sec, clear the level and stop the animation
+            // after 1sec, stop the animation
             display.clear();
             resolve(state.status);
             return false;
@@ -481,11 +498,24 @@ function runLevel(level, Display) {
 }
 
 async function runGame(plans, Display) {
+    let lives;
     for (let level = 0; level < plans.length;) {
-        const status = await runLevel(new Level(plans[level]), Display);
-        if (status === 'won') level += 1;
+        if (lives == null) lives = 3;
+        const status = await runLevel(new Level(plans[level]), Display, lives);
+        if (status === 'won') {
+            level += 1;
+            lives = 3;
+        } else {
+            lives -= 1;
+            if (lives === 0) {
+                level = 0;
+                lives = 3;
+            }
+        }
     }
-    console.log('You\'ve won!');
+    const message = elt('div', { class: 'win-message' });
+    message.textContent = 'You Win!';
+    document.body.append(message);
 }
 
 //
@@ -498,7 +528,7 @@ console.log(simpleLevel);
 runGame(GAME_LEVELS, DOMDisplay);
 
 // TODO:
-// IN PROCESS: Game Over(3 lives per level)
-// 2. Pausing the game
+// DONE: Game Over(3 lives per level)
+// IN PROGRESS: Pausing the game
 // DONE: Slow down motion in lava
 // 4. A Monster which moves and disappears if the player jumps on it

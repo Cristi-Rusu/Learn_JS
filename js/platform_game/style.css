@@ -1,7 +1,7 @@
 body {
   margin: 0;
 }
-.game {
+.level {
   overflow: hidden;
   max-width: 600px;
   max-height: 450px;
@@ -35,4 +35,30 @@ body {
 }
 .coin {
   background: rgb(241, 229, 89);
+}
+.lives {
+    position: relative;
+}
+.life {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 10px;
+    background: brown;
+    z-index: 5;
+}
+.active {
+    background: rgb(240, 50, 36);
+}
+.win-message {
+    background: rgb(52, 166, 251);
+    width: 600px;
+    height: 450px;
+    color: orange;
+    font-size: 56px;
+    font-weight: bold;
+    font-family: sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
