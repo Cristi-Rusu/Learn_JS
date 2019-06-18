@@ -563,6 +563,8 @@ function runLevel(level, Display, lives) {
             });
             // after 1sec, stop the animation
             display.clear();
+            window.removeEventListener('keydown', escHandler);
+            pauseBtn.addEventListener('click', pauseHandler);
             arrowKeys.removeListener();
             return false;
         }
@@ -585,11 +587,12 @@ function runLevel(level, Display, lives) {
                 pause = 'yes';
             }
         }
-        // pause/unpause when 'esc' is pressed
-        window.addEventListener('keydown', (event) => {
+        function escHandler(event) {
             if (event.key !== 'Escape') return;
             pauseHandler();
-        });
+        }
+        // pause/unpause when 'esc' is pressed
+        window.addEventListener('keydown', escHandler);
         pauseBtn.addEventListener('click', pauseHandler);
         runAnimation(frame);
     });
