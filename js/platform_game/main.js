@@ -29,8 +29,17 @@ function trackKeys(keys) {
             event.preventDefault();
         }
     }
-    window.addEventListener('keydown', track);
-    window.addEventListener('keyup', track);
+    pressed.listen = () => {
+        window.addEventListener('keydown', track);
+        window.addEventListener('keyup', track);
+    };
+    pressed.removeListener = () => {
+        window.removeEventListener('keydown', track);
+        window.removeEventListener('keyup', track);
+        for (const key of keys) {
+            delete pressed[key];
+        }
+    };
     return pressed;
 }
 const arrowKeys = trackKeys(['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown']);
@@ -219,6 +228,49 @@ class Coin {
 Coin.prototype.type = 'coin';
 Coin.prototype.size = new Vec(0.6, 0.6);
 
+
+class Monster {
+    constructor(pos, speed) {
+        this.pos = pos;
+        this.speed = speed;
+    }
+
+    static create(pos) {
+        return new Monster(pos.plus(new Vec(0, -1)), new Vec(4, 0));
+    }
+
+    // if the player touches a Monster, the game is lost
+    collide(state) {
+        const {
+            player, actors, status, level, lives,
+        } = state;
+        const playerBottom = player.pos.y + player.size.y;
+        // Monster's top is 85% of it's body, because the player has to intersect
+        // it's body to call the 'collide' method
+        const monsterTop = this.pos.y + this.size.y * 0.15;
+        // if the player is above the Monster('y' axis is inverted)
+        if (playerBottom < monsterTop) {
+            const filtered = actors.filter(actor => actor !== this);
+            return new State(level, filtered, status, lives);
+        }
+        return new State(level, actors, 'lost', lives - 1);
+    }
+
+    update(time, state) {
+        // compute the next position with the state, time and Monster's speed
+        const newPos = this.pos.plus(this.speed.times(time));
+        // if the next position doesn't intersect a wall
+        // move the lava block(return a new Lava Object with the new position)
+        if (!state.level.touches(newPos, this.size, 'wall')) {
+            return new Monster(newPos, this.speed);
+        }
+        // invert the direction of moving the monster it meets a wall
+        return new Monster(this.pos, this.speed.times(-1));
+    }
+}
+Monster.prototype.type = 'monster';
+Monster.prototype.size = new Vec(1.2, 2);
+
 const levelChars = {
     '.': 'empty',
     '#': 'wall',
@@ -228,6 +280,7 @@ const levelChars = {
     '|': Lava,
     v: Lava,
     o: Coin,
+    M: Monster,
 };
 
 //
@@ -371,11 +424,11 @@ function drawActors(actors) {
     }));
 }
 
-function drawLives(number) {
+function drawLives(lifeNumber) {
     const lives = [];
     for (let i = 0; i < 3; i++) {
         const life = elt('div', { class: 'life' });
-        if (i < number) life.classList = 'life active';
+        if (i < lifeNumber) life.classList = 'life active';
         life.style.left = `${10 + 26 * i}px`;
         lives.push(life);
     }
@@ -387,7 +440,9 @@ class DOMDisplay {
     constructor(parent, level, lives) {
         this.lives = lives;
         this.level = elt('div', { class: 'level' }, drawGrid(level));
-        this.game = elt('div', { class: 'game' }, this.level);
+        this.game = elt('div', { class: 'game' },
+            elt('div', { class: 'pause-btn' }),
+            this.level);
         this.actorLayer = null;
         this.livesLayer = null;
         parent.appendChild(this.game);
@@ -398,7 +453,7 @@ class DOMDisplay {
     scrollPlayerIntoView(state) {
         const width = this.level.clientWidth;
         const height = this.level.clientHeight;
-        const margin = width / 3;
+        const margin = width / 4;
         // The viewport
         // the distance scrolled from the top-left corner
         const left = this.level.scrollLeft;
@@ -471,12 +526,24 @@ function runAnimation(frameFunc) {
  * @param {Object} Display a constructor to draw the level
  */
 function runLevel(level, Display, lives) {
+    arrowKeys.listen();
     const display = new Display(document.body, level, lives);
+    const pauseBtn = Array.from(display.game.children).find(node => (
+        node.className === 'pause-btn'
+    ));
     let state = State.start(level, lives);
     // it's used to pause 1sec when a level is completed(lost or won)
     let ending = 1;
+    let pause = 'no';
     return new Promise((resolve) => {
-        runAnimation((time) => {
+        function frame(time) {
+            // pause the game(stop the animation)
+            if (pause === 'pausing') {
+                pause = 'yes';
+            } else if (pause === 'yes') {
+                return false;
+            }
+
             state = state.update(time, arrowKeys);
             display.syncState(state);
             // if the status is playing, continue the animation
@@ -489,19 +556,54 @@ function runLevel(level, Display, lives) {
                 ending -= time;
                 return true;
             }
+            resolve({
+                status: state.status,
+                lvlWidth: `${display.game.clientWidth}px`,
+                lvlHeight: `${display.game.clientHeight}px`,
+            });
             // after 1sec, stop the animation
             display.clear();
-            resolve(state.status);
+            arrowKeys.removeListener();
             return false;
+        }
+
+        function pauseHandler() {
+            const pauseMess = elt('div', { class: 'message message__pause' });
+            pauseMess.textContent = 'Pause';
+
+            if (pause === 'no') {
+                // display the pause message
+                pause = 'pausing';
+                display.game.appendChild(pauseMess);
+            } else if (pause === 'yes') {
+                pause = 'no';
+                const pauseWindow = document.querySelector('.message__pause');
+                if (pauseWindow) pauseWindow.remove();
+                // run the animation again on the same state
+                runAnimation(frame);
+            } else {
+                pause = 'yes';
+            }
+        }
+        // pause/unpause when 'esc' is pressed
+        window.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            pauseHandler();
         });
+        pauseBtn.addEventListener('click', pauseHandler);
+        runAnimation(frame);
     });
 }
 
 async function runGame(plans, Display) {
     let lives;
+    const message = elt('div', { class: 'message message__win' });
+    message.textContent = 'You Win!';
     for (let level = 0; level < plans.length;) {
         if (lives == null) lives = 3;
-        const status = await runLevel(new Level(plans[level]), Display, lives);
+        const { status, lvlWidth, lvlHeight } = await runLevel(
+            new Level(plans[level]), Display, lives,
+        );
         if (status === 'won') {
             level += 1;
             lives = 3;
@@ -512,9 +614,9 @@ async function runGame(plans, Display) {
                 lives = 3;
             }
         }
+        message.style.width = lvlWidth;
+        message.style.height = lvlHeight;
     }
-    const message = elt('div', { class: 'win-message' });
-    message.textContent = 'You Win!';
     document.body.append(message);
 }
 
@@ -526,9 +628,3 @@ const simpleLevel = new Level(simpleLevelPlan);
 console.log(simpleLevel);
 
 runGame(GAME_LEVELS, DOMDisplay);
-
-// TODO:
-// DONE: Game Over(3 lives per level)
-// IN PROGRESS: Pausing the game
-// DONE: Slow down motion in lava
-// 4. A Monster which moves and disappears if the player jumps on it
