@@ -561,11 +561,11 @@ function runLevel(level, Display, lives) {
                 lvlWidth: `${display.game.clientWidth}px`,
                 lvlHeight: `${display.game.clientHeight}px`,
             });
+            window.removeEventListener('keydown', escHandler);
+            pauseBtn.removeEventListener('click', pauseHandler);
+            arrowKeys.removeListener();
             // after 1sec, stop the animation
             display.clear();
-            window.removeEventListener('keydown', escHandler);
-            pauseBtn.addEventListener('click', pauseHandler);
-            arrowKeys.removeListener();
             return false;
         }
 
