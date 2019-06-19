@@ -4,6 +4,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 //
 
+/* eslint-disable no-unused-vars */
 /* eslint-disable no-use-before-define */
 /* eslint-disable class-methods-use-this */
 /* eslint-disable no-await-in-loop */
@@ -50,6 +51,12 @@ function overlap(actor1, actor2) {
         && actor1.pos.x < actor2.pos.x + actor2.size.x
         && actor1.pos.y + actor1.size.y > actor2.pos.y
         && actor1.pos.y < actor2.pos.y + actor2.size.y;
+}
+
+function flipHorizontally(context, around) {
+    context.translate(around, 0);
+    context.scale(-1, 1);
+    context.translate(-around, 0);
 }
 
 //
@@ -439,10 +446,10 @@ function drawLives(lifeNumber) {
 class DOMDisplay {
     constructor(parent, level, lives) {
         this.lives = lives;
-        this.level = elt('div', { class: 'level' }, drawGrid(level));
+        this.display = elt('div', { class: 'level' }, drawGrid(level));
         this.game = elt('div', { class: 'game' },
             elt('div', { class: 'pause-btn' }),
-            this.level);
+            this.display);
         this.actorLayer = null;
         this.livesLayer = null;
         parent.appendChild(this.game);
@@ -451,13 +458,13 @@ class DOMDisplay {
     clear() { this.game.remove(); }
 
     scrollPlayerIntoView(state) {
-        const width = this.level.clientWidth;
-        const height = this.level.clientHeight;
+        const width = this.display.clientWidth;
+        const height = this.display.clientHeight;
         const margin = width / 4;
         // The viewport
         // the distance scrolled from the top-left corner
-        const left = this.level.scrollLeft;
-        const top = this.level.scrollTop;
+        const left = this.display.scrollLeft;
+        const top = this.display.scrollTop;
         const right = width + left;
         const bottom = width + top;
 
@@ -467,16 +474,16 @@ class DOMDisplay {
 
         // scroll the viewport if the player is near the edges(les than 1/3 of viewport)
         if (center.x < left + margin) {
-            this.level.scrollLeft = center.x - margin;
+            this.display.scrollLeft = center.x - margin;
         } else if (center.x > right - margin) {
             // subtract the 'width' because we set the Left scroll position
-            this.level.scrollLeft = center.x + margin - width;
+            this.display.scrollLeft = center.x + margin - width;
         }
         if (center.y < top + margin) {
-            this.level.scrollTop = center.y - margin;
+            this.display.scrollTop = center.y - margin;
         } else if (center.y > bottom - margin) {
             // subtract the 'height' because we set the Top scroll position
-            this.level.scrollTop = center.y + margin - height;
+            this.display.scrollTop = center.y + margin - height;
         }
     }
 
@@ -487,10 +494,171 @@ class DOMDisplay {
         // create a new actorLayer
         if (this.actorLayer) this.actorLayer.remove();
         this.actorLayer = drawActors(state.actors);
-        this.level.appendChild(this.actorLayer);
+        this.display.appendChild(this.actorLayer);
         // update the background color depending on the status
-        this.level.className = `level ${state.status}`;
+        this.display.className = `level ${state.status}`;
         this.scrollPlayerIntoView(state);
+    }
+}
+
+const otherSprites = document.createElement('img');
+otherSprites.src = 'http://eloquentjavascript.net/img/sprites.png';
+const playerSprites = document.createElement('img');
+playerSprites.src = 'http://eloquentjavascript.net/img/player.png';
+// the player sprite is 24px to give some room for hands and legs
+// (4px on one side and 4px on the other)
+const playerXOverlap = 4;
+class CanvasDisplay {
+    constructor(parent, level, lives) {
+        this.lives = lives;
+        this.livesLayer = null;
+        this.canvas = elt('canvas', {});
+        this.canvas.width = Math.min(800, level.width * SCALE);
+        this.canvas.height = Math.min(650, level.height * SCALE);
+        this.game = elt('div', { class: 'game' },
+            elt('div', { class: 'pause-btn' }),
+            this.canvas);
+        parent.appendChild(this.game);
+
+        this.cx = this.canvas.getContext('2d');
+        this.flipPlayer = false;
+
+        this.viewport = {
+            left: 0,
+            top: 0,
+            width: this.canvas.width / SCALE,
+            height: this.canvas.height / SCALE,
+        };
+    }
+
+    clear() { this.game.remove(); }
+
+    updateViewport(state) {
+        const view = this.viewport;
+        const margin = view.width / 4;
+        const { player } = state;
+        const center = player.pos.plus(player.size.times(0.5));
+
+        // use Math.max and Math.min to make sure the viewport doesn't show space outside the level
+        if (center.x < view.left + margin) {
+            view.left = Math.max(center.x - margin, 0);
+        } else if (center.x > view.left + view.width - margin) {
+            view.left = Math.min(center.x + margin - view.width,
+                state.level.width - view.width);
+        }
+
+        if (center.y < view.top + margin) {
+            view.top = Math.max(center.y - margin, 0);
+        } else if (center.y > view.top + view.height - margin) {
+            view.top = Math.min(center.y + margin - view.height,
+                state.level.height - view.height);
+        }
+    }
+
+    // change the color of the sky depending on the status of the game
+    clearDisplay(status) {
+        if (status === 'won') {
+            this.cx.fillStyle = 'rgb(68, 191, 255)';
+        } else if (status === 'lost') {
+            this.cx.fillStyle = 'rgb(44, 136, 214)';
+        } else {
+            this.cx.fillStyle = 'rgb(52, 166, 251)';
+        }
+        this.cx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    drawBackground(level) {
+        const {
+            left, top, width, height,
+        } = this.viewport;
+        const xStart = Math.floor(left);
+        const xEnd = Math.ceil(left + width);
+        const yStart = Math.floor(top);
+        const yEnd = Math.ceil(top + height);
+
+        for (let y = yStart; y < yEnd; y++) {
+            for (let x = xStart; x < xEnd; x++) {
+                const tile = level.rows[y][x];
+                // eslint-disable-next-line no-continue
+                if (tile === 'empty') continue;
+                const screenX = (x - left) * SCALE;
+                const screenY = (y - top) * SCALE;
+                // if the tile is lava, the sprite's 'x' coordinate is 'SCALE'(20px)
+                // else means it's a wall and the coordinate is 0
+                const tileX = tile === 'lava' ? SCALE : 0;
+                this.cx.drawImage(otherSprites,
+                    tileX, 0, SCALE, SCALE,
+                    screenX, screenY, SCALE, SCALE);
+            }
+        }
+    }
+
+    // TODO:
+    drawLives(lives) {
+
+    }
+
+    drawMonster(monster, x, y, width, height) {
+
+    }
+
+    drawPlayer(player, x, y, width, height) {
+        width += playerXOverlap * 2;
+        x -= playerXOverlap;
+        if (player.speed.x !== 0) {
+            this.flipPlayer = player.speed.x < 0;
+        }
+        // standing sprite
+        let tile = 8;
+        if (player.speed.y !== 0) {
+            // jumping sprite
+            tile = 9;
+        } else if (player.speed.x !== 0) {
+            // switch running sprites(8 of them) each 60 milliseconds
+            tile = Math.floor(Date.now() / 60) % 8;
+        }
+        // save the current transformations to revert after flipping the player
+        // (the whole axis is flipped)
+        this.cx.save();
+        if (this.flipPlayer) {
+            flipHorizontally(this.cx, x + width / 2);
+        }
+        // get the 'x' position in the sprites
+        const tileX = tile * width;
+        this.cx.drawImage(playerSprites,
+            tileX, 0, width, height,
+            x, y, width, height);
+        this.cx.restore();
+    }
+
+    drawActors(actors) {
+        for (const actor of actors) {
+            const width = actor.size.x * SCALE;
+            const height = actor.size.y * SCALE;
+            const x = (actor.pos.x - this.viewport.left) * SCALE;
+            const y = (actor.pos.y - this.viewport.top) * SCALE;
+            if (actor.type === 'player') {
+                this.drawPlayer(actor, x, y, width, height);
+            } else {
+                // if it's a coin get the 3rd sprite
+                // otherwise it's lava and get the 2nd sprite
+                const tileX = (actor.type === 'coin' ? 2 : 1) * SCALE;
+                this.cx.drawImage(otherSprites,
+                    tileX, 0, width, height,
+                    x, y, width, height);
+            }
+        }
+    }
+
+    syncState(state) {
+        if (this.livesLayer) this.livesLayer.remove();
+        this.livesLayer = drawLives(state.lives);
+        this.game.prepend(this.livesLayer);
+
+        this.updateViewport(state);
+        this.clearDisplay(state.status);
+        this.drawBackground(state.level);
+        this.drawActors(state.actors);
     }
 }
 
@@ -630,4 +798,5 @@ async function runGame(plans, Display) {
 const simpleLevel = new Level(simpleLevelPlan);
 console.log(simpleLevel);
 
-runGame(GAME_LEVELS, DOMDisplay);
+// runGame(GAME_LEVELS, DOMDisplay);
+runGame(GAME_LEVELS, CanvasDisplay);
