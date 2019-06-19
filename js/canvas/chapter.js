@@ -108,3 +108,79 @@ cx10.font = '28px Georgia';
 cx10.fillStyle = 'green';
 cx10.fillText('I can draw text too!', 10, 50);
 cx10.strokeText('Not the prettiest text.', 10, 80);
+
+// Images
+const cx11 = get2d('canv11');
+const hat = document.createElement('img');
+hat.src = 'http://eloquentjavascript.net/img/hat.png';
+hat.addEventListener('load', () => {
+    for (let x = 10; x < 200; x += 30) {
+        cx11.drawImage(hat, x, 10);
+    }
+});
+
+// animate a sprite on the canvas
+const cx12 = get2d('canv12');
+const player = document.createElement('img');
+player.src = 'http://eloquentjavascript.net/img/player.png';
+const spriteW = 24;
+const spriteH = 30;
+player.addEventListener('load', () => {
+    let cycle = 0;
+    setInterval(() => {
+        cx12.clearRect(0, 0, spriteW, spriteH);
+        cx12.drawImage(player,
+            // the part of sprite to display
+            cycle * spriteW, 0, spriteW, spriteH,
+            // the position on the canvas
+            0, 0, spriteW, spriteH);
+        // use the remainder operator to cycle through the first 8 parts of the sprite
+        cycle = (cycle + 1) % 8;
+    }, 100);
+});
+
+// Transformations
+const cx13 = get2d('canv13');
+cx13.scale(2, 0.5);
+cx13.beginPath();
+cx13.arc(50, 50, 40, 0, 2 * Math.PI);
+cx13.lineWidth = 3;
+cx13.stroke();
+
+function flipHorizontally(context, around) {
+    context.translate(around, 0);
+    context.scale(-1, 1);
+    context.translate(-around, 0);
+}
+
+const cx14 = get2d('canv14');
+player.addEventListener('load', () => {
+    let cycle = 0;
+    // flip around the sprite's vertical axis
+    flipHorizontally(cx14, spriteW / 2);
+    setInterval(() => {
+        cx14.clearRect(0, 0, spriteW, spriteH);
+        cx14.drawImage(player,
+            // the part of sprite to display
+            cycle * spriteW, 0, spriteW, spriteH,
+            // the position on the canvas
+            0, 0, spriteW, spriteH);
+        // use the remainder operator to cycle through the first 8 parts of the sprite
+        cycle = (cycle + 1) % 8;
+    }, 100);
+});
+
+const cx15 = get2d('canv15');
+function branch(length, angle, scale) {
+    cx15.fillRect(0, 0, 1, length);
+    if (length < 8) return;
+    cx15.save();
+    cx15.translate(0, length);
+    cx15.rotate(-angle);
+    branch(length * scale, angle, scale);
+    cx15.rotate(angle * 2);
+    branch(length * scale, angle, scale);
+    cx15.restore();
+}
+cx15.translate(150, 0);
+branch(40, 0.4, 0.85);
