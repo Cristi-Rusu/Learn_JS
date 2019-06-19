@@ -1,3 +1,6 @@
+* {
+    box-sizing: border-box;
+}
 body {
   margin: 0;
   display: flex;
@@ -80,6 +83,7 @@ body {
 .game {
     position: relative;
     width: fit-content;
+    border: 1px solid black;
 }
 .pause-btn {
     width: 16px;
@@ -100,4 +104,7 @@ body {
 }
 .pause-btn::after {
     right: 0;
+}
+canvas {
+    display: block;
 }
