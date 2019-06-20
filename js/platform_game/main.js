@@ -8,7 +8,7 @@
 /* eslint-disable no-use-before-define */
 /* eslint-disable class-methods-use-this */
 /* eslint-disable no-await-in-loop */
-/* global simpleLevelPlan, GAME_LEVELS:true */
+/* global simpleLevelPlan, MonsterLevel, GAME_LEVELS:true */
 
 /*
  *  Rules:
@@ -276,7 +276,7 @@ class Monster {
     }
 }
 Monster.prototype.type = 'monster';
-Monster.prototype.size = new Vec(1.2, 2);
+Monster.prototype.size = new Vec(1.4, 1.6);
 
 const levelChars = {
     '.': 'empty',
@@ -508,10 +508,14 @@ playerSprites.src = 'http://eloquentjavascript.net/img/player.png';
 // the player sprite is 24px to give some room for hands and legs
 // (4px on one side and 4px on the other)
 const playerXOverlap = 4;
+const monsterSprites = document.createElement('img');
+monsterSprites.src = './js/platform_game/images/monster.png';
+const monsterXOverlap = 6;
+const livesSprites = document.createElement('img');
+livesSprites.src = './js/platform_game/images/lives.png';
 class CanvasDisplay {
     constructor(parent, level, lives) {
         this.lives = lives;
-        this.livesLayer = null;
         this.canvas = elt('canvas', {});
         this.canvas.width = Math.min(800, level.width * SCALE);
         this.canvas.height = Math.min(650, level.height * SCALE);
@@ -522,6 +526,7 @@ class CanvasDisplay {
 
         this.cx = this.canvas.getContext('2d');
         this.flipPlayer = false;
+        this.flipMonster = false;
 
         this.viewport = {
             left: 0,
@@ -593,15 +598,6 @@ class CanvasDisplay {
         }
     }
 
-    // TODO:
-    drawLives(lives) {
-
-    }
-
-    drawMonster(monster, x, y, width, height) {
-
-    }
-
     drawPlayer(player, x, y, width, height) {
         width += playerXOverlap * 2;
         x -= playerXOverlap;
@@ -631,6 +627,28 @@ class CanvasDisplay {
         this.cx.restore();
     }
 
+    drawMonster(monster, x, y, width, height) {
+        width += monsterXOverlap * 2;
+        x -= monsterXOverlap;
+        if (monster.speed.x !== 0) {
+            // the sprite is looking towards left,
+            // so flip it when the Monster moves to the right
+            this.flipMonster = monster.speed.x > 0;
+        }
+        // switch sprites(4 of them) each 120 milliseconds
+        let tile = Math.floor(Date.now() / 120) % 4;
+        if (tile === 2) tile = 3;
+        this.cx.save();
+        if (this.flipMonster) {
+            flipHorizontally(this.cx, x + width / 2);
+        }
+        const tileX = tile * width;
+        this.cx.drawImage(monsterSprites,
+            tileX, 0, width, height,
+            x, y, width, height);
+        this.cx.restore();
+    }
+
     drawActors(actors) {
         for (const actor of actors) {
             const width = actor.size.x * SCALE;
@@ -639,6 +657,8 @@ class CanvasDisplay {
             const y = (actor.pos.y - this.viewport.top) * SCALE;
             if (actor.type === 'player') {
                 this.drawPlayer(actor, x, y, width, height);
+            } else if (actor.type === 'monster') {
+                this.drawMonster(actor, x, y, width, height);
             } else {
                 // if it's a coin get the 3rd sprite
                 // otherwise it's lava and get the 2nd sprite
@@ -650,15 +670,22 @@ class CanvasDisplay {
         }
     }
 
-    syncState(state) {
-        if (this.livesLayer) this.livesLayer.remove();
-        this.livesLayer = drawLives(state.lives);
-        this.game.prepend(this.livesLayer);
+    drawLives(lives) {
+        for (let i = 0; i < 3; i++) {
+            // on 0px is the full heart, and on 60px is the empty heart
+            const tileX = i < lives ? 0 : 50;
+            this.cx.drawImage(livesSprites,
+                tileX, 0, 25, 25,
+                10 + 30 * i, 10, 25, 25);
+        }
+    }
 
+    syncState(state) {
         this.updateViewport(state);
         this.clearDisplay(state.status);
         this.drawBackground(state.level);
         this.drawActors(state.actors);
+        this.drawLives(state.lives);
     }
 }
 
@@ -798,5 +825,5 @@ async function runGame(plans, Display) {
 const simpleLevel = new Level(simpleLevelPlan);
 console.log(simpleLevel);
 
-// runGame(GAME_LEVELS, DOMDisplay);
-runGame(GAME_LEVELS, CanvasDisplay);
+// runGame([MonsterLevel, ...GAME_LEVELS], DOMDisplay);
+runGame([MonsterLevel, ...GAME_LEVELS], CanvasDisplay);
