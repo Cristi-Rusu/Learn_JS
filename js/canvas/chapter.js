@@ -184,3 +184,24 @@ function branch(length, angle, scale) {
 }
 cx15.translate(150, 0);
 branch(40, 0.4, 0.85);
+
+const cx16 = get2d('canv16');
+// draws a isosceles trapezoid
+function trapezoid(cx, height, smSide, lgSide) {
+    const diff = lgSide - smSide;
+    if (diff < 0) {
+        // eslint-disable-next-line max-len
+        throw Error(`Trapezoid base(lgSide: ${lgSide}) should be larger than smSide: ${smSide}`);
+    }
+    cx.beginPath();
+    cx.moveTo(0, height);
+    cx.lineTo(lgSide, height);
+    cx.lineTo(smSide + diff / 2, 0);
+    cx.lineTo(diff / 2, 0);
+    cx.closePath();
+    cx.stroke();
+}
+trapezoid(cx16, 50, 60, 160);
+
+const cx17 = get2d('canv17');
+// TODO: Draw the examples on canvas
