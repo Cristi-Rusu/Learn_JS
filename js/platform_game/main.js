@@ -80,7 +80,7 @@ class Vec {
 }
 
 const PLAYER_XSPEED = 7;
-const LAVA_SLOWDOWN = { x: 7, y: 1.6 };
+const DEATH_SLOWDOWN = { x: 7, y: 1.6 };
 const GRAVITY = 30;
 const JUMP_SPEED = 17;
 class Player {
@@ -93,12 +93,12 @@ class Player {
         return new Player(pos.plus(new Vec(0, -0.5)), new Vec(0, 0));
     }
 
-    touchesLava(state) {
-        if (state.level.touches(this.pos, this.size, 'lava')) {
+    touchesActor(state, type) {
+        if (state.level.touches(this.pos, this.size, type)) {
             return true;
         }
         for (const actor of state.actors) {
-            if (actor.type === 'lava' && overlap(actor, this)) {
+            if (actor.type === type && overlap(actor, this)) {
                 return true;
             }
         }
@@ -110,14 +110,20 @@ class Player {
         let speed = 0;
         if (keys.ArrowLeft) speed -= PLAYER_XSPEED;
         if (keys.ArrowRight) speed += PLAYER_XSPEED;
-        if (this.touchesLava(state)) speed /= LAVA_SLOWDOWN.x;
+        if (this.touchesActor(state, 'lava')
+            || this.touchesActor(state, 'monster')) {
+            speed /= DEATH_SLOWDOWN.x;
+        }
         return speed;
     }
 
     // the time in the air is not controlled, so we don't need 'keys'
     getYSpeed(state, time) {
         let speed = this.speed.y + GRAVITY * time;
-        if (this.touchesLava(state)) speed /= LAVA_SLOWDOWN.y;
+        if (this.touchesActor(state, 'lava')
+            || this.touchesActor(state, 'monster')) {
+            speed /= DEATH_SLOWDOWN.y;
+        }
         return speed;
     }
 
