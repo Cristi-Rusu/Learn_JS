@@ -187,16 +187,12 @@ branch(40, 0.4, 0.85);
 
 const cx16 = get2d('canv16');
 // draws a isosceles trapezoid
-function trapezoid(cx, height, smSide, lgSide) {
-    const diff = lgSide - smSide;
-    if (diff < 0) {
-        // eslint-disable-next-line max-len
-        throw Error(`Trapezoid base(lgSide: ${lgSide}) should be larger than smSide: ${smSide}`);
-    }
+function trapezoid(cx, height, base1, base2) {
+    const diff = base2 - base1;
     cx.beginPath();
     cx.moveTo(0, height);
-    cx.lineTo(lgSide, height);
-    cx.lineTo(smSide + diff / 2, 0);
+    cx.lineTo(base2, height);
+    cx.lineTo(base1 + diff / 2, 0);
     cx.lineTo(diff / 2, 0);
     cx.closePath();
     cx.stroke();
@@ -204,4 +200,57 @@ function trapezoid(cx, height, smSide, lgSide) {
 trapezoid(cx16, 50, 60, 160);
 
 const cx17 = get2d('canv17');
-// TODO: Draw the examples on canvas
+function drawDiamond(cx, size, color) {
+    cx.save();
+    cx.beginPath();
+    cx.rotate(0.25 * Math.PI);
+    cx.translate(size, 0);
+    cx.moveTo(0, 0);
+    cx.lineTo(size, 0);
+    cx.lineTo(size, size);
+    cx.lineTo(0, size);
+    cx.closePath();
+    cx.restore();
+    cx.fillStyle = color;
+    cx.fill();
+}
+drawDiamond(cx17, 30, 'red');
+
+const cx18 = get2d('canv18');
+function zigzag(cx, x, y, lines) {
+    cx.beginPath();
+    for (let i = 0; i <= lines; i++) {
+        // the uneven lines have the 'x' position, the event ones - 0
+        const xPos = i % 2 === 1 ? x : 0;
+        cx.lineTo(xPos, y * (i + 1));
+    }
+    cx.stroke();
+}
+zigzag(cx18, 60, 7, 15);
+
+const cx19 = get2d('canv19');
+function spiral(cx, lines) {
+    cx.beginPath();
+    let radius = 1;
+    for (let i = 0; i <= Math.PI / 20 * lines; i += Math.PI / 20) {
+        cx.lineTo(Math.cos(i) * radius, Math.sin(i) * radius);
+        radius += 0.5;
+    }
+    cx.stroke();
+}
+cx19.translate(100, 80);
+spiral(cx19, 150);
+
+const cx20 = get2d('canv20');
+function star(cx, size) {
+    cx.beginPath();
+    cx.moveTo(size, 0);
+    for (let i = Math.PI / 4; i <= Math.PI * 2; i += Math.PI / 4) {
+        cx.quadraticCurveTo(0, 0,
+            Math.cos(i) * size, Math.sin(i) * size);
+    }
+    cx.fillStyle = 'orange';
+    cx.fill();
+}
+cx20.translate(70, 70);
+star(cx20, 70);
