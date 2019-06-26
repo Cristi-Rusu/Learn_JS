@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>HTTP and Forms</title>
+</head>
+<body>
+    <form action="./example/message.html" method="get">
+        <label>Name: <input id="input" name="name" type="text"></label>
+        <br>
+        <label>Message: <br>
+            <textarea name="message" cols="26" rows="10"></textarea>
+        </label>
+        <br>
+        <button type="submit">Send</button>
+    </form>
+    <hr>
+    <form action="./example/submit.html" id="login-form">
+        <label>Name: <input type="text" name="name"></label>
+        <br>
+        <label>Password: <input type="password" name="password"></label>
+        <br>
+        <button type="submit">Log in</button>
+    </form>
+    <hr>
+    <p>Save a value</p>
+    <form action="./example/submit.html" id="prevent-form">
+        <label>Value: <input type="text" name="value"></label>
+        <button type="submit">Save</button>
+    </form>
+    <hr>
+    <p>Press F2 to write 'Khasekhemwy'</p>
+    <textarea id="article" cols="30" rows="10"></textarea>
+    <hr>
+    <textarea id="counted-area" cols="30" rows="10"></textarea>
+    <p>Length: <span id="counter">0</span></p>
+
+    <script src="chapter.js"></script>
+</body>
+</html>
