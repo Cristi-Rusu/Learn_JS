@@ -144,3 +144,73 @@ aFilesInput.addEventListener('change', async () => {
             ), error => console.log(error));
     }
 });
+
+// Simple note taking app
+const noteList = document.getElementById('note-names');
+const noteField = document.getElementById('note');
+const addBtn = document.getElementById('add-note');
+let state;
+
+function setState(newState) {
+    // clear the select field's options
+    noteList.textContent = '';
+    for (const name of Object.keys(newState.notes)) {
+        const option = document.createElement('option');
+        option.textContent = name;
+        if (newState.selected === name) option.selected = true;
+        noteList.appendChild(option);
+    }
+    noteField.value = newState.notes[newState.selected];
+
+    localStorage.setItem('Notes', JSON.stringify(newState));
+    state = newState;
+}
+
+// display the selected note from the list
+noteList.addEventListener('change', () => (
+    setState({ notes: state.notes, selected: noteList.value })
+));
+// update a note on change
+noteField.addEventListener('change', () => (
+    setState({
+        // copy the state's notes and the 3rd argument to and empty object
+        notes: Object.assign({},
+            state.notes,
+            { [state.selected]: noteField.value }),
+        selected: state.selected,
+    })
+));
+// add a new note
+addBtn.addEventListener('click', () => {
+    // eslint-disable-next-line no-alert
+    const name = prompt('Note name:');
+    if (name) {
+        setState({
+            notes: Object.assign({},
+                state.notes,
+                { [name]: '' }),
+            selected: name,
+        });
+    }
+});
+
+setState(JSON.parse(localStorage.getItem('Notes'))
+    || { notes: { Note: '' }, selected: 'Note' });
+
+
+const code = document.getElementById('code');
+const runBtn = document.getElementById('run-btn');
+runBtn.addEventListener('click', () => {
+    let codeOutput;
+    try {
+        // eslint-disable-next-line no-new-func
+        const returnVal = Function('', code.value);
+        codeOutput = returnVal();
+    } catch (err) {
+        codeOutput = err;
+    } finally {
+        const parag = document.createElement('p');
+        parag.textContent = codeOutput.toString();
+        code.parentNode.insertBefore(parag, runBtn.nextSibling);
+    }
+});
