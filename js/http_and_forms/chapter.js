@@ -50,6 +50,7 @@ console.log(loginForm.elements.password.form === loginForm);
 const preventForm = document.getElementById('prevent-form');
 preventForm.addEventListener('submit', (event) => {
     console.log('Saving value:', preventForm.elements.value.value);
+    preventForm.elements.value.value = '';
     event.preventDefault();
 });
 
@@ -74,4 +75,72 @@ const countedArea = document.getElementById('counted-area');
 const counter = document.getElementById('counter');
 countedArea.addEventListener('input', () => {
     counter.innerText = countedArea.value.length;
+});
+
+const checkboxPurple = document.getElementById('purple');
+checkboxPurple.addEventListener('change', () => {
+    document.body.style.background = checkboxPurple.checked ? 'mediumpurple' : '';
+});
+
+// all elements with the 'name' attribute equal to 'color'
+const colorRadios = document.querySelectorAll('[name=color]');
+for (const button of colorRadios) {
+    button.addEventListener('change', () => {
+        document.body.style.background = button.value;
+    });
+}
+
+const binarySelect = document.getElementById('binary-select');
+const output = document.getElementById('output');
+binarySelect.addEventListener('change', () => {
+    let number = 0;
+    for (const option of Array.from(binarySelect.options)) {
+        if (option.selected) {
+            number += Number(option.value);
+        }
+    }
+    output.textContent = number;
+});
+
+const fileInput = document.getElementById('file-input');
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        console.log(`You chose: ${file.name}`);
+        if (file.type) console.log(`It's type is ${file.type}`);
+        console.log(file);
+    }
+});
+
+const filesInput = document.getElementById('files-input');
+filesInput.addEventListener('change', () => {
+    for (const file of Array.from(filesInput.files)) {
+        const reader = new FileReader();
+        reader.readAsText(file);
+        reader.addEventListener('load', () => {
+            console.log(`File ${file.name}:\n`, reader.result);
+        });
+    }
+});
+
+// promise based interface for FileReader
+// the 'format' is passed to 'readAs{format}' method to invoke the wanted read function
+function readFile(file, format) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        // read the file as the given format
+        reader[`readAs${format}`](file);
+        reader.addEventListener('load', () => resolve(reader.result));
+        reader.addEventListener('error', () => reject(reader.error));
+    });
+}
+
+const aFilesInput = document.getElementById('async-files-input');
+aFilesInput.addEventListener('change', async () => {
+    for (const file of Array.from(aFilesInput.files)) {
+        readFile(file, 'Text')
+            .then(fileContent => (
+                console.log(`File ${file.name}\n`, fileContent)
+            ), error => console.log(error));
+    }
 });

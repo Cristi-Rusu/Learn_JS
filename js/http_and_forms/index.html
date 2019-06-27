@@ -31,11 +31,40 @@
         <button type="submit">Save</button>
     </form>
     <hr>
-    <p>Press F2 to write 'Khasekhemwy'</p>
+    <p>Press F2 inside the textarea to write 'Khasekhemwy'</p>
     <textarea id="article" cols="30" rows="10"></textarea>
     <hr>
     <textarea id="counted-area" cols="30" rows="10"></textarea>
     <p>Length: <span id="counter">0</span></p>
+    <hr>
+    <label>
+        <input type="checkbox" id="purple">Make this page purple
+    </label>
+    <hr>
+    <label>
+        <input type="radio" name="color" value="orange">Orange
+    </label>
+    <label>
+        <input type="radio" name="color" value="lightgreen">Green
+    </label>
+    <label>
+        <input type="radio" name="color" value="lightblue">Blue
+    </label>
+    <hr>
+    <select id="binary-select" multiple style="width: 50px;">
+        <option value="1">0001</option>
+        <option value="2">0010</option>
+        <option value="4">0100</option>
+        <option value="8">1000</option>
+    </select>
+    <span>= <span id="output">0</span></span>
+    <hr>
+    <input type="file" id="file-input">
+    <hr>
+    <h4>Log the files' content</h4>
+    <input type="file" id="files-input" multiple>
+    <p>Uses a promise based read function</p>
+    <input type="file" id="async-files-input" multiple>
 
     <script src="chapter.js"></script>
 </body>
