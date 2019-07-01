@@ -125,10 +125,12 @@ class Game {
     }
 
     nextGeneration() {
-        const oldState = this.state;
         const { cells, height, width } = this.grid;
+        const oldState = this.state;
+        const newState = this.state;
 
         for (let y = 0; y < height; y++) {
+            newState.push([]);
             for (let x = 0; x < width; x++) {
                 const neighbors = getNeighbors(oldState, y, x);
                 // count the alive neighbors
@@ -139,15 +141,19 @@ class Game {
                 // if there are 3 alive neighbors
                 // or the cell is alive and has 2 alive neighbors
                 if (aliveNeighbors === 3
-                    || (cells[y][x].alive && aliveNeighbors === 2)) {
-                    cells[y][x].alive = true;
+                    || (oldState[y][x] && aliveNeighbors === 2)) {
+                    newState[y][x] = true;
                 } else {
-                    cells[y][x].alive = false;
+                    newState[y][x] = false;
+                }
+                // change only the updated cells
+                if (oldState[y][x] !== newState[y][x]) {
+                    cells[y][x].alive = newState[y][x];
                 }
             }
         }
     }
 }
 
-const game = new Game(Grid.random(30, 20));
+const game = new Game(Grid.random(40, 30));
 document.body.appendChild(game.dom);
