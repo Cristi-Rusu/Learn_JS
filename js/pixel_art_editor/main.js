@@ -10,6 +10,13 @@
 
 // the size of a pixel on the canvas
 const SCALE = 10;
+// used to get the adjacent pixels(excluding diagonal) in the grid in the 'fill' function
+const AROUND = [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
+];
 
 //
 // ─── FUNCTIONS ───────────────────────────────────────────────────────────────────
@@ -82,6 +89,29 @@ function rectangle(start, state, dispatch) {
 
 function pick(pos, state, dispatch) {
     dispatch({ color: state.picture.pixel(pos.x, pos.y) });
+}
+
+// flood fill tool
+function fill({ x, y }, state, dispatch) {
+    const targetColor = state.picture.pixel(x, y);
+    const drawn = [{ x, y, color: state.color }];
+    // add the adjacent pixels with the 'targetColor' until there are no such pixels left
+    for (let i = 0; i < drawn.length; i++) {
+        for (const { dx, dy } of AROUND) {
+            const adjacentX = drawn[i].x + dx;
+            const adjacentY = drawn[i].y + dy;
+            // if the coordinates are inside the picture(0 <= coordinate < 'picture dimension')
+            if (adjacentX >= 0 && adjacentX < state.picture.width
+                && adjacentY >= 0 && adjacentY < state.picture.height
+                // if the color of the adjacent pixel equal to the 'targetColor'
+                && state.picture.pixel(adjacentX, adjacentY) === targetColor
+                // if there are no pixels with the same coordinates in the 'drawn' array
+                && !drawn.some(p => p.x === adjacentX && p.y === adjacentY)) {
+                drawn.push({ x: adjacentX, y: adjacentY, color: state.color });
+            }
+        }
+    }
+    dispatch({ picture: state.picture.draw(drawn) });
 }
 // ───────────────────────────────────────────────────────────── DRAWING TOOLS ─────
 
@@ -261,7 +291,9 @@ let editorState = {
     picture: Picture.empty(60, 40, '#f0f0f0'),
 };
 const App = new PixelEditor(editorState, {
-    tools: { draw, rectangle, pick },
+    tools: {
+        draw, fill, rectangle, pick,
+    },
     controls: [ToolSelect, ColorSelect],
     dispatch(action) {
         editorState = updateState(editorState, action);
