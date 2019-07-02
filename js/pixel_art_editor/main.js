@@ -19,7 +19,7 @@ const AROUND = [
 ];
 
 //
-// ─── FUNCTIONS ───────────────────────────────────────────────────────────────────
+// ─── FUNCTIONS ──────────────────────────────────────────────────────────────────
 //
 
 function elt(type, props, ...children) {
@@ -55,76 +55,11 @@ function drawPicture(picture, canvas, scale) {
     }
 }
 
-// ─── DRAWING TOOLS ───────────────────────────────────────────────────────────────
-function draw(pos, state, dispatch) {
-    function drawPixel({ x, y }, currState) {
-        const drawn = { x, y, color: currState.color };
-        // pass the state a new picture, by drawing a pixel on the old one
-        dispatch({ picture: currState.picture.draw([drawn]) });
-    }
-    drawPixel(pos, state);
-    return drawPixel;
-}
-
-function rectangle(start, state, dispatch) {
-    // while dragging the rectangle is redrawn from the original state
-    function drawRectangle(pos) {
-        const xStart = Math.min(start.x, pos.x);
-        const yStart = Math.min(start.y, pos.y);
-        const xEnd = Math.max(start.x, pos.x);
-        const yEnd = Math.max(start.y, pos.y);
-        const drawn = [];
-
-        for (let y = yStart; y <= yEnd; y++) {
-            for (let x = xStart; x <= xEnd; x++) {
-                drawn.push({ x, y, color: state.color });
-            }
-        }
-        // pass the state a new picture, by drawing a rectangle on the old image
-        dispatch({ picture: state.picture.draw(drawn) });
-    }
-    drawRectangle(start);
-    return drawRectangle;
-}
-
-function pick(pos, state, dispatch) {
-    dispatch({ color: state.picture.pixel(pos.x, pos.y) });
-}
-
-// flood fill tool
-function fill({ x, y }, state, dispatch) {
-    const targetColor = state.picture.pixel(x, y);
-    const drawn = [{ x, y, color: state.color }];
-    // add the adjacent pixels with the 'targetColor' until there are no such pixels left
-    for (let i = 0; i < drawn.length; i++) {
-        for (const { dx, dy } of AROUND) {
-            const adjacentX = drawn[i].x + dx;
-            const adjacentY = drawn[i].y + dy;
-            // if the coordinates are inside the picture(0 <= coordinate < 'picture dimension')
-            if (adjacentX >= 0 && adjacentX < state.picture.width
-                && adjacentY >= 0 && adjacentY < state.picture.height
-                // if the color of the adjacent pixel equal to the 'targetColor'
-                && state.picture.pixel(adjacentX, adjacentY) === targetColor
-                // if there are no pixels with the same coordinates in the 'drawn' array
-                && !drawn.some(p => p.x === adjacentX && p.y === adjacentY)) {
-                drawn.push({ x: adjacentX, y: adjacentY, color: state.color });
-            }
-        }
-    }
-    dispatch({ picture: state.picture.draw(drawn) });
-}
-// ───────────────────────────────────────────────────────────── DRAWING TOOLS ─────
-
-function updateState(state, action) {
-    // copy the state and overwrite it's properties with the action props
-    return Object.assign({}, state, action);
-}
-
 //
-// ──────────────────────────────────────────────────────────────── FUNCTIONS ──────
+// ──────────────────────────────────────────────────────────────── FUNCTIONS ─────
 //
 //
-// ─── COMPONENTS ──────────────────────────────────────────────────────────────────
+// ─── COMPONENTS ─────────────────────────────────────────────────────────────────
 //
 
 class Picture {
@@ -218,6 +153,66 @@ class PictureCanvas {
 
 
 // ─── CONTROLS ───────────────────────────────────────────────────────────────────
+
+// ─── Drawing Tools ──────────────────────────────────────────────────────────────
+function draw(pos, state, dispatch) {
+    function drawPixel({ x, y }, currState) {
+        const drawn = { x, y, color: currState.color };
+        // pass the state a new picture, by drawing a pixel on the old one
+        dispatch({ picture: currState.picture.draw([drawn]) });
+    }
+    drawPixel(pos, state);
+    return drawPixel;
+}
+
+function rectangle(start, state, dispatch) {
+    // while dragging the rectangle is redrawn from the original state
+    function drawRectangle(pos) {
+        const xStart = Math.min(start.x, pos.x);
+        const yStart = Math.min(start.y, pos.y);
+        const xEnd = Math.max(start.x, pos.x);
+        const yEnd = Math.max(start.y, pos.y);
+        const drawn = [];
+
+        for (let y = yStart; y <= yEnd; y++) {
+            for (let x = xStart; x <= xEnd; x++) {
+                drawn.push({ x, y, color: state.color });
+            }
+        }
+        // pass the state a new picture, by drawing a rectangle on the old image
+        dispatch({ picture: state.picture.draw(drawn) });
+    }
+    drawRectangle(start);
+    return drawRectangle;
+}
+
+function pick(pos, state, dispatch) {
+    dispatch({ color: state.picture.pixel(pos.x, pos.y) });
+}
+
+// flood fill tool
+function fill({ x, y }, state, dispatch) {
+    const targetColor = state.picture.pixel(x, y);
+    const drawn = [{ x, y, color: state.color }];
+    // add the adjacent pixels with the 'targetColor' until there are no such pixels left
+    for (let i = 0; i < drawn.length; i++) {
+        for (const { dx, dy } of AROUND) {
+            const adjacentX = drawn[i].x + dx;
+            const adjacentY = drawn[i].y + dy;
+            // if the coordinates are inside the picture(0 <= coordinate < 'picture dimension')
+            if (adjacentX >= 0 && adjacentX < state.picture.width
+                && adjacentY >= 0 && adjacentY < state.picture.height
+                // if the color of the adjacent pixel equal to the 'targetColor'
+                && state.picture.pixel(adjacentX, adjacentY) === targetColor
+                // if there are no pixels with the same coordinates in the 'drawn' array
+                && !drawn.some(p => p.x === adjacentX && p.y === adjacentY)) {
+                drawn.push({ x: adjacentX, y: adjacentY, color: state.color });
+            }
+        }
+    }
+    dispatch({ picture: state.picture.draw(drawn) });
+}
+// ──────────────────────────────────────────────────────────── Drawing Tools ─────
 class ToolSelect {
     constructor(state, { tools, dispatch }) {
         this.select = elt('select', {
@@ -240,6 +235,7 @@ class ColorSelect {
             type: 'color',
             value: state.color,
             onchange: () => dispatch({ color: this.input.value }),
+            style: 'position: relative; top: 3px;',
         });
         this.dom = elt('label', {},
             '🎨Color: ',
@@ -247,6 +243,94 @@ class ColorSelect {
     }
 
     syncState(state) { this.input.value = state.color; }
+}
+
+class SaveButton {
+    constructor(state) {
+        this.picture = state.picture;
+        this.dom = elt('button', {
+            onclick: () => this.save(),
+        }, '💾Save');
+    }
+
+    save() {
+        const canvas = elt('canvas');
+        // draw the picture with the scale = 1px
+        drawPicture(this.picture, canvas, 1);
+        // create the link and click it automatically
+        const link = elt('a', {
+            href: canvas.toDataURL(),
+            download: 'pixel-art.png',
+        });
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
+    syncState(state) { this.picture = state.picture; }
+}
+
+// ─── Load Image ─────────────────────────────────────────────────────────────────
+function pictureFromImage(image) {
+    // limit the size of the image to 100px w/h
+    const width = Math.min(100, image.width);
+    const height = Math.min(100, image.height);
+    const canvas = elt('canvas', { width, height });
+    const cx = canvas.getContext('2d');
+    cx.drawImage(image, 0, 0);
+    // get the data from the 'width' * 'height' section of the image
+    const { data } = cx.getImageData(0, 0, width, height);
+    const pixels = [];
+
+    function hex(n) {
+        // 'padStart' prepends '0' is the string is shorter than 2
+        // i.e. '5' -> '05', 'C' -> '0C'
+        return n.toString(16).padStart(2, '0');
+    }
+
+    // 'i' is added by 4, because there are 4 color channels(r, g, b, a)
+    for (let i = 0; i < data.length; i += 4) {
+        // we don't get the alpha channels because the '2d' context gets the colors in hex
+        const [r, g, b] = data.slice(i, i + 3);
+        // create the hex color
+        pixels.push(`#${hex(r) + hex(g) + hex(b)}`);
+    }
+
+    return new Picture(width, height, pixels);
+}
+
+function finishLoad(file, dispatch) {
+    if (file == null) return;
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.addEventListener('load', () => {
+        const image = elt('img', {
+            src: reader.result,
+            onload: () => dispatch({
+                picture: pictureFromImage(image),
+            }),
+        });
+    });
+}
+
+function startLoad(dispatch) {
+    const input = elt('input', {
+        type: 'file',
+        onchange: () => finishLoad(input.files[0], dispatch),
+    });
+    document.body.appendChild(input);
+    input.click();
+    input.remove();
+}
+// ─────────────────────────────────────────────────────────────── Load Image ─────
+// the load button doesn't need to know anything about the application
+// so it's stateless('_' instead of 'state')
+class LoadButton {
+    constructor(_, { dispatch }) {
+        this.dom = elt('button', {
+            onclick: () => startLoad(dispatch),
+        }, '📁Load');
+    }
 }
 // ───────────────────────────────────────────────────────────────── CONTROLS ─────
 
@@ -263,7 +347,7 @@ class PixelEditor {
             if (onMove) return newPos => onMove(newPos, this.state);
         });
         this.controls = controls.map(Control => new Control(state, config));
-        this.dom = elt('div', {},
+        this.dom = elt('div', { style: 'width: fit-content; margin: 0 auto;' },
             this.canvas.dom,
             elt('br'),
             ...this.controls.reduce((arr, ctrl) => (
@@ -274,7 +358,10 @@ class PixelEditor {
     syncState(state) {
         this.state = state;
         this.canvas.syncState(state.picture);
-        for (const ctrl of this.controls) ctrl.syncState(state);
+        for (const ctrl of this.controls) {
+            // update the stateful components
+            if (ctrl.syncState) ctrl.syncState(state);
+        }
     }
 }
 
@@ -285,6 +372,11 @@ class PixelEditor {
 // ─── RUNNING ────────────────────────────────────────────────────────────────────
 //
 
+function updateState(state, action) {
+    // copy the state and overwrite it's properties with the action props
+    return Object.assign({}, state, action);
+}
+
 let editorState = {
     tool: 'draw',
     color: '#000000',
@@ -294,7 +386,7 @@ const App = new PixelEditor(editorState, {
     tools: {
         draw, fill, rectangle, pick,
     },
-    controls: [ToolSelect, ColorSelect],
+    controls: [ToolSelect, ColorSelect, SaveButton, LoadButton],
     dispatch(action) {
         editorState = updateState(editorState, action);
         App.syncState(editorState);
