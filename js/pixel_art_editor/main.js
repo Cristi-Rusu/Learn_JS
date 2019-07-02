@@ -290,10 +290,9 @@ function pictureFromImage(image) {
 
     // 'i' is added by 4, because there are 4 color channels(r, g, b, a)
     for (let i = 0; i < data.length; i += 4) {
-        // we don't get the alpha channels because the '2d' context gets the colors in hex
-        const [r, g, b] = data.slice(i, i + 3);
+        const [r, g, b, a] = data.slice(i, i + 4);
         // create the hex color
-        pixels.push(`#${hex(r) + hex(g) + hex(b)}`);
+        pixels.push(`#${hex(r) + hex(g) + hex(b) + hex(a)}`);
     }
 
     return new Picture(width, height, pixels);
