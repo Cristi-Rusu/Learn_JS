@@ -331,6 +331,20 @@ class LoadButton {
         }, '📁Load');
     }
 }
+
+class UndoButton {
+    constructor(state, { dispatch }) {
+        this.dom = elt('button', {
+            onclick: () => dispatch({ undo: true }),
+            disabled: state.done.length === 0,
+        }, '⮪ Undo');
+    }
+
+    // disable it when there is no history to revert to
+    syncState(state) {
+        this.dom.disabled = state.done.length === 0;
+    }
+}
 // ───────────────────────────────────────────────────────────────── CONTROLS ─────
 
 
@@ -371,8 +385,30 @@ class PixelEditor {
 // ─── RUNNING ────────────────────────────────────────────────────────────────────
 //
 
+// eslint-disable-next-line no-unused-vars
 function updateState(state, action) {
     // copy the state and overwrite it's properties with the action props
+    return Object.assign({}, state, action);
+}
+
+function historyUpdateState(state, action) {
+    // revert to the previously stored picture and slice it from the 'done' array
+    if (action.undo === true) {
+        if (state.done.length === 0) return state;
+        return Object.assign({}, state, {
+            picture: state.done[0],
+            done: state.done.slice(1),
+            // 'doneAt' is set to 0, so that the next change is guaranteed to store the picture back in the history
+            doneAt: 0,
+        });
+    }
+    // update the undo history maximum each second(no more frequently)
+    if (action.picture && state.doneAt < Date.now() - 1000) {
+        return Object.assign({}, state, action, {
+            done: [state.picture, ...state.done],
+            doneAt: Date.now(),
+        });
+    }
     return Object.assign({}, state, action);
 }
 
@@ -380,14 +416,16 @@ let editorState = {
     tool: 'draw',
     color: '#000000',
     picture: Picture.empty(60, 40, '#f0f0f0'),
+    done: [],
+    doneAt: 0,
 };
 const App = new PixelEditor(editorState, {
     tools: {
         draw, fill, rectangle, pick,
     },
-    controls: [ToolSelect, ColorSelect, SaveButton, LoadButton],
+    controls: [ToolSelect, ColorSelect, SaveButton, LoadButton, UndoButton],
     dispatch(action) {
-        editorState = updateState(editorState, action);
+        editorState = historyUpdateState(editorState, action);
         App.syncState(editorState);
     },
 });
