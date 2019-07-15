@@ -1,0 +1,9 @@
+.pixel-editor {
+    width:fit-content;
+    margin:0 auto;
+    outline:none;
+}
+
+.pixel-editor:focus{
+    border: 2px solid lightgray;
+}
