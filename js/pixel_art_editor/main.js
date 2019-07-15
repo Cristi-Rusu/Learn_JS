@@ -360,12 +360,24 @@ class PixelEditor {
             if (onMove) return newPos => onMove(newPos, this.state);
         });
         this.controls = controls.map(Control => new Control(state, config));
-        this.dom = elt('div', { style: 'width: fit-content; margin: 0 auto;' },
+        this.dom = elt('div', { tabIndex: 0, className: 'pixel-editor' },
             this.canvas.dom,
             elt('br'),
             ...this.controls.reduce((arr, ctrl) => (
                 arr.concat(' ', ctrl.dom)
             ), []));
+        this.dom.addEventListener('keydown', (event) => {
+            if (event.key === 'z' && (event.ctrlKey || event.metaKey)) {
+                dispatch({ undo: true });
+                event.preventDefault();
+            }
+            for (const toolName of Object.keys(tools)) {
+                // if the first letter of a tool was typed
+                if (event.key === toolName[0]) {
+                    dispatch({ tool: toolName });
+                }
+            }
+        });
     }
 
     syncState(state) {
@@ -412,22 +424,36 @@ function historyUpdateState(state, action) {
     return Object.assign({}, state, action);
 }
 
-let editorState = {
+const startState = {
     tool: 'draw',
     color: '#000000',
     picture: Picture.empty(60, 40, '#f0f0f0'),
     done: [],
     doneAt: 0,
 };
-const App = new PixelEditor(editorState, {
-    tools: {
-        draw, fill, rectangle, pick,
-    },
-    controls: [ToolSelect, ColorSelect, SaveButton, LoadButton, UndoButton],
-    dispatch(action) {
-        editorState = historyUpdateState(editorState, action);
-        App.syncState(editorState);
-    },
-});
+const baseTools = {
+    draw, fill, rectangle, pick,
+};
+const baseControls = [
+    ToolSelect, ColorSelect, SaveButton, LoadButton, UndoButton,
+];
 
-document.body.appendChild(App.dom);
+function startPixelEditor({
+    state = startState,
+    tools = baseTools,
+    controls = baseControls,
+}) {
+    const App = new PixelEditor(state, {
+        tools,
+        controls,
+        dispatch(action) {
+            state = historyUpdateState(state, action);
+            App.syncState(state);
+        },
+    });
+    document.body.appendChild(App.dom);
+}
+
+startPixelEditor({});
+
+// TODO: Efficient drawing
