@@ -40,17 +40,38 @@ function pointerPosition(event, canvas) {
     };
 }
 
-function drawPicture(picture, canvas, scale) {
-    canvas.width = picture.width * scale;
-    canvas.height = picture.height * scale;
-    const cx = canvas.getContext('2d');
+/**
+ * Draws a 'picture' on a given 'canvas', setting it's width and height according to the 'scale'
+ * If given a 'previous' instanceof 'Picture', it will draw only the difference between the images
+ * @param {instanceof Picture} picture the picture that needs to be drawn on the canvas
+ * @param {instanceof Node} canvas the canvas on which to draw the picture
+ * @param {number} scale the which determines how big a picture pixel will look on the screen
+ * @param {instanceof Picture} previous is used to draw the image more efficiently and can be omitted
+ */
+function drawPicture(picture, canvas, scale, previous) {
+    // if no previous picture was provided or it's dimensions don't coincide
+    // it is needed to not change the canvas' width and height every time, because this erases it's content
+    if (previous == null
+        || previous.width !== picture.width
+        || previous.height !== picture.height) {
+        canvas.width = picture.width * scale;
+        canvas.height = picture.height * scale;
+        // set 'previous' to 'null' because it's dimensions are different from the 'picture'
+        previous = null;
+    }
 
+    const cx = canvas.getContext('2d');
     for (let y = 0; y < picture.height; y++) {
         for (let x = 0; x < picture.width; x++) {
-            // get the color for the fill style
-            cx.fillStyle = picture.pixel(x, y);
-            // each pixes is a rectangle with 'scale' width and height
-            cx.fillRect(x * scale, y * scale, scale, scale);
+            const color = picture.pixel(x, y);
+            // draw a pixel only if the 'previous' pixel is different from the new picture's one
+            // or there is no 'previous'
+            if (previous == null || previous.pixel(x, y) !== color) {
+                // get the color for the fill style
+                cx.fillStyle = picture.pixel(x, y);
+                // each pixes is a rectangle with 'scale' width and height
+                cx.fillRect(x * scale, y * scale, scale, scale);
+            }
         }
     }
 }
@@ -99,8 +120,8 @@ class PictureCanvas {
 
     syncState(picture) {
         if (this.picture === picture) return;
+        drawPicture(picture, this.dom, SCALE, this.picture);
         this.picture = picture;
-        drawPicture(this.picture, this.dom, SCALE);
     }
 
     mouse(downEvent, onDown) {
