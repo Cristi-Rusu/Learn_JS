@@ -186,6 +186,30 @@ function draw(pos, state, dispatch) {
     return drawPixel;
 }
 
+function line(start, state, dispatch) {
+    function drawLine(to) {
+        // the distance from 'start' to the dragged point
+        const lineSize = Math.ceil(Math.sqrt(
+            ((start.x - to.x) ** 2) + ((start.y - to.y) ** 2),
+        ));
+        const angle = Math.atan(
+            (start.y - to.y) / (start.x - to.x),
+        );
+        const drawn = [];
+
+        for (let i = 1; i <= lineSize; i++) {
+            const dx = Math.ceil(Math.cos(angle) * i);
+            const dy = Math.ceil(Math.sin(angle) * i);
+            const x = start.x + dx;
+            const y = start.y + dy;
+            drawn.push({ x, y, color: state.color });
+        }
+        dispatch({ picture: state.picture.draw(drawn) });
+    }
+    drawLine(start);
+    return drawLine;
+}
+
 function rectangle(start, state, dispatch) {
     // while dragging the rectangle is redrawn from the original state
     function drawRectangle(pos) {
@@ -208,7 +232,7 @@ function rectangle(start, state, dispatch) {
 }
 
 function circle(start, state, dispatch) {
-// while dragging the circle is redrawn from the original state
+    // while dragging the circle is redrawn from the original state
     function drawCircle(to) {
         const radius = Math.sqrt(
             ((start.x - to.x) ** 2) + ((start.y - to.y) ** 2),
@@ -485,7 +509,7 @@ const startState = {
     doneAt: 0,
 };
 const baseTools = {
-    draw, fill, rectangle, circle, pick,
+    draw, line, rectangle, circle, fill, pick,
 };
 const baseControls = [
     ToolSelect, ColorSelect, SaveButton, LoadButton, UndoButton,
@@ -508,5 +532,3 @@ function startPixelEditor({
 }
 
 startPixelEditor({});
-
-// TODO: Efficient drawing
