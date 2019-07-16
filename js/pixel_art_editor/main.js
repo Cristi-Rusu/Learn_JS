@@ -207,34 +207,26 @@ function rectangle(start, state, dispatch) {
     return drawRectangle;
 }
 
-const sin = a => Math.sin(a);
-const cos = a => Math.cos(a);
 function circle(start, state, dispatch) {
 // while dragging the circle is redrawn from the original state
-    function drawCircle(pos) {
-        // the distance dragged
-        const xDragged = Math.abs(pos.x - start.x);
-        const yDragged = Math.abs(pos.y - start.y);
-        const radius = Math.ceil(Math.sqrt((xDragged ** 2) + (yDragged ** 2)));
-        const xStart = start.x - radius;
-        const yStart = start.y - radius;
-        const xEnd = start.x + radius;
-        const yEnd = start.y + radius;
+    function drawCircle(to) {
+        const radius = Math.sqrt(
+            ((start.x - to.x) ** 2) + ((start.y - to.y) ** 2),
+        );
+        const radiusC = Math.ceil(radius);
         const drawn = [];
 
-        for (let y = yStart; y <= yEnd; y++) {
-            for (let x = xStart; x <= xEnd; x++) {
-                if (x >= 0 && x < state.picture.width
-                    && y >= 0 && y < state.picture.height) {
-                    // coordinates in relation to the center's center
-                    const xCircle = x - start.x;
-                    const yCircle = y - start.y;
-                    const angle = Math.atan2(yCircle, xCircle);
-                    // checks if the coordinate is inside the circle
-                    if (yCircle >= Math.min(sin(angle), -sin(angle)) * radius
-                        && yCircle <= Math.max(sin(angle), -sin(angle)) * radius
-                        && xCircle >= Math.min(cos(angle), -cos(angle)) * radius
-                        && xCircle <= Math.max(cos(angle), -cos(angle)) * radius) {
+        for (let dy = -radiusC; dy <= radiusC; dy++) {
+            for (let dx = -radiusC; dx <= radiusC; dx++) {
+                // distance to the (dx, dy) point with the origin (0, 0)
+                const dist = Math.sqrt((dx ** 2) + (dy ** 2));
+                // by drawing the points with the distance smaller than the radius
+                // a shape in form of a circle will be created
+                if (dist <= radius) {
+                    const x = start.x + dx;
+                    const y = start.y + dy;
+                    if (x >= 0 && x < state.picture.width
+                        && y >= 0 && y < state.picture.height) {
                         drawn.push({ x, y, color: state.color });
                     }
                 }
