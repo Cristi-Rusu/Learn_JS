@@ -309,7 +309,9 @@ function draw(start, state, dispatch) {
             && pos.x <= start.x + 1
             && pos.y >= start.y - 1
             && pos.y <= start.y + 1) {
-            drawn.push({ x: pos.x, y: pos.y, color: currState.color });
+            if (isInsidePicture(pos.x, pos.y, currState)) {
+                drawn.push({ x: pos.x, y: pos.y, color: currState.color });
+            }
         } else {
             // 'linePxArray' returns an array of pixels to draw
             drawn = linePxArray(pos, currState, start);
