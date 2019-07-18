@@ -22,6 +22,18 @@ const AROUND = [
 // ─── FUNCTIONS ──────────────────────────────────────────────────────────────────
 //
 
+// gets the fractional part of a number
+function getFraction(n) {
+    const s = String(n);
+    let number;
+    if (s.indexOf('.') === -1) {
+        number = 0;
+    } else {
+        number = Number(s.slice(s.indexOf('.')));
+    }
+    return number;
+}
+
 function elt(type, props, ...children) {
     const dom = document.createElement(type);
     if (props) Object.assign(dom, props);
@@ -186,23 +198,50 @@ function draw(pos, state, dispatch) {
     return drawPixel;
 }
 
+// TODO: correct implementation of line tool(vertical lines)
 function line(start, state, dispatch) {
     function drawLine(to) {
-        // the distance from 'start' to the dragged point
-        const lineSize = Math.ceil(Math.sqrt(
-            ((start.x - to.x) ** 2) + ((start.y - to.y) ** 2),
-        ));
-        const angle = Math.atan(
-            (start.y - to.y) / (start.x - to.x),
-        );
+        console.log(start);
+        console.log(to);
+        const xDistance = Math.abs(to.x - start.x) + 1;
+        console.log(xDistance);
+        const yDistance = Math.abs(to.y - start.y) + 1;
+        console.log(yDistance);
+        const ratio = xDistance / yDistance;
         const drawn = [];
 
-        for (let i = 1; i <= lineSize; i++) {
-            const dx = Math.ceil(Math.cos(angle) * i);
-            const dy = Math.ceil(Math.sin(angle) * i);
-            const x = start.x + dx;
-            const y = start.y + dy;
-            drawn.push({ x, y, color: state.color });
+        // remainder
+        let rem = 0;
+        let xPos = start.x;
+        const { y } = start;
+        for (let yCoord = 0; yCoord < yDistance; yCoord++) {
+        // 'dy' is positive if the starting point is above 'to' and vice versa
+            const dy = start.y < to.y ? yCoord : -yCoord;
+            // the number of pixel on each row(on the y axis)
+            let pixNum;
+            if (rem >= 0.5) {
+                pixNum = ratio - (1 - rem);
+            } else {
+                pixNum = ratio + rem;
+            }
+            rem = getFraction(pixNum);
+            console.log(rem);
+
+            const toDraw = Math.round(pixNum);
+            if (toDraw === 0) {
+            // if toDraw equals 0, means we have to draw a pixel on the vertical axis
+            // to do this, it's position should be on the same 'x' coordinate
+                drawn.push({ x: xPos, y: y + dy, color: state.color });
+            } else {
+            // 'xCoord' is relative to the current position of 'x'(xPos)
+                for (let xCoord = 0; xCoord < toDraw; xCoord++) {
+                // 'dx' is positive if the starting point is to the left of 'to' and vice versa
+                    const dx = start.x < to.x ? xCoord : -xCoord;
+                    drawn.push({ x: xPos + dx, y: y + dy, color: state.color });
+                }
+                // update the xPosition after drawing the pixels on a specific row(y axis)
+                xPos += start.x < to.x ? toDraw : -toDraw;
+            }
         }
         dispatch({ picture: state.picture.draw(drawn) });
     }
