@@ -22,6 +22,11 @@ const AROUND = [
 // ─── FUNCTIONS ──────────────────────────────────────────────────────────────────
 //
 
+function isInsidePicture(x, y, state) {
+    return x >= 0 && x < state.picture.width
+        && y >= 0 && y < state.picture.height;
+}
+
 // gets the fractional part of a number
 function getFraction(n) {
     const s = String(n);
@@ -220,19 +225,23 @@ function linePxArray(to, state, start) {
 
             const toDraw = Math.round(pixNum);
             if (toDraw === 0) {
-            // if 'toDraw' equals 0, means we have to draw a pixel on the vertical axis
-            // to do this, it's position should be on the same 'x' coordinate
-                drawn.push({ x: xPos, y: yPos + dy, color: state.color });
+                // if 'toDraw' equals 0, means we have to draw a pixel on the vertical axis
+                // to do this, it's position should be on the same 'x' coordinate
+                if (isInsidePicture(xPos, yPos + dy, state)) {
+                    drawn.push({ x: xPos, y: yPos + dy, color: state.color });
+                }
             } else {
                 // 'xCoord' is relative to the current position of 'x'(xPos)
                 for (let xCoord = 0; xCoord < toDraw; xCoord++) {
                     // 'dx' is positive if the starting point is to the left of 'to' and vice versa
                     const dx = start.x < to.x ? xCoord : -xCoord;
-                    drawn.push({
-                        x: xPos + dx,
-                        y: yPos + dy,
-                        color: state.color,
-                    });
+                    if (isInsidePicture(xPos + dx, yPos + dy, state)) {
+                        drawn.push({
+                            x: xPos + dx,
+                            y: yPos + dy,
+                            color: state.color,
+                        });
+                    }
                 }
                 // update the 'x' position(xPos) after drawing the pixels on a specific row(y axis)
                 xPos += start.x < to.x ? toDraw : -toDraw;
@@ -258,17 +267,21 @@ function linePxArray(to, state, start) {
             if (toDraw === 0) {
                 // if 'toDraw' equals 0, means we have to draw a pixel on the horizontal axis
                 // to do this, it's position should be on the same 'y' coordinate
-                drawn.push({ x: xPos + dx, y: yPos, color: state.color });
+                if (isInsidePicture(xPos + dx, yPos, state)) {
+                    drawn.push({ x: xPos + dx, y: yPos, color: state.color });
+                }
             } else {
                 // 'yCoord' is relative to the current position of 'y'(yPos)
                 for (let yCoord = 0; yCoord < toDraw; yCoord++) {
                     // 'dy' is positive if the starting point is above 'to' and vice versa
                     const dy = start.y < to.y ? yCoord : -yCoord;
-                    drawn.push({
-                        x: xPos + dx,
-                        y: yPos + dy,
-                        color: state.color,
-                    });
+                    if (isInsidePicture(xPos + dx, yPos + dy, state)) {
+                        drawn.push({
+                            x: xPos + dx,
+                            y: yPos + dy,
+                            color: state.color,
+                        });
+                    }
                 }
                 // update the yPosition after drawing the pixels on a specific column(x axis)
                 yPos += start.y < to.y ? toDraw : -toDraw;
@@ -347,8 +360,7 @@ function circle(start, state, dispatch) {
                 if (dist <= radius) {
                     const x = start.x + dx;
                     const y = start.y + dy;
-                    if (x >= 0 && x < state.picture.width
-                        && y >= 0 && y < state.picture.height) {
+                    if (isInsidePicture(x, y, state)) {
                         drawn.push({ x, y, color: state.color });
                     }
                 }
@@ -374,9 +386,7 @@ function fill({ x, y }, state, dispatch) {
         for (const { dx, dy } of AROUND) {
             const adjacentX = drawn[i].x + dx;
             const adjacentY = drawn[i].y + dy;
-            // if the coordinates are inside the picture(0 <= coordinate < 'picture dimension')
-            if (adjacentX >= 0 && adjacentX < state.picture.width
-                && adjacentY >= 0 && adjacentY < state.picture.height
+            if (isInsidePicture(adjacentX, adjacentY, state)
                 // if the color of the adjacent pixel equal to the 'targetColor'
                 && state.picture.pixel(adjacentX, adjacentY) === targetColor
                 // if there are no pixels with the same coordinates in the 'drawn' array
