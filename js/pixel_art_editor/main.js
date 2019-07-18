@@ -198,49 +198,90 @@ function draw(pos, state, dispatch) {
     return drawPixel;
 }
 
-// TODO: correct implementation of line tool(vertical lines)
+// draws a line, by iterating on a reference axis and
+// adding the necessary number of pixels on each row/column
+// the ratio of vertical and horizontal distances determines this number by
+// using the remainder to draw more or less pixels, depending on the remainder's value
 function line(start, state, dispatch) {
     function drawLine(to) {
-        console.log(start);
-        console.log(to);
         const xDistance = Math.abs(to.x - start.x) + 1;
-        console.log(xDistance);
         const yDistance = Math.abs(to.y - start.y) + 1;
-        console.log(yDistance);
-        const ratio = xDistance / yDistance;
         const drawn = [];
 
-        // remainder
+        // remainder, the decimal part
         let rem = 0;
         let xPos = start.x;
-        const { y } = start;
-        for (let yCoord = 0; yCoord < yDistance; yCoord++) {
-        // 'dy' is positive if the starting point is above 'to' and vice versa
-            const dy = start.y < to.y ? yCoord : -yCoord;
-            // the number of pixel on each row(on the y axis)
-            let pixNum;
-            if (rem >= 0.5) {
-                pixNum = ratio - (1 - rem);
-            } else {
-                pixNum = ratio + rem;
-            }
-            rem = getFraction(pixNum);
-            console.log(rem);
-
-            const toDraw = Math.round(pixNum);
-            if (toDraw === 0) {
-            // if toDraw equals 0, means we have to draw a pixel on the vertical axis
-            // to do this, it's position should be on the same 'x' coordinate
-                drawn.push({ x: xPos, y: y + dy, color: state.color });
-            } else {
-            // 'xCoord' is relative to the current position of 'x'(xPos)
-                for (let xCoord = 0; xCoord < toDraw; xCoord++) {
-                // 'dx' is positive if the starting point is to the left of 'to' and vice versa
-                    const dx = start.x < to.x ? xCoord : -xCoord;
-                    drawn.push({ x: xPos + dx, y: y + dy, color: state.color });
+        let yPos = start.y;
+        let ratio = xDistance / yDistance;
+        if (ratio > 0.5) {
+            // the reference axis is 'y'
+            for (let yCoord = 0; yCoord < yDistance; yCoord++) {
+                // 'dy' is positive if the starting point(start) is above 'to' and vice versa
+                const dy = start.y < to.y ? yCoord : -yCoord;
+                // the number of pixel on each row(on the y axis)
+                let pixNum;
+                if (rem >= 0.5) {
+                    pixNum = ratio - (1 - rem);
+                } else {
+                    pixNum = ratio + rem;
                 }
-                // update the xPosition after drawing the pixels on a specific row(y axis)
-                xPos += start.x < to.x ? toDraw : -toDraw;
+                rem = getFraction(pixNum);
+
+                const toDraw = Math.round(pixNum);
+                if (toDraw === 0) {
+                // if 'toDraw' equals 0, means we have to draw a pixel on the vertical axis
+                // to do this, it's position should be on the same 'x' coordinate
+                    drawn.push({ x: xPos, y: yPos + dy, color: state.color });
+                } else {
+                    // 'xCoord' is relative to the current position of 'x'(xPos)
+                    for (let xCoord = 0; xCoord < toDraw; xCoord++) {
+                        // 'dx' is positive if the starting point is to the left of 'to' and vice versa
+                        const dx = start.x < to.x ? xCoord : -xCoord;
+                        drawn.push({
+                            x: xPos + dx,
+                            y: yPos + dy,
+                            color: state.color,
+                        });
+                    }
+                    // update the 'x' position(xPos) after drawing the pixels on a specific row(y axis)
+                    xPos += start.x < to.x ? toDraw : -toDraw;
+                }
+            }
+        } else {
+            // in case { ratio <= 0.5 }, we need to switch the reference axes to draw the line correctly
+            // as well as the ratio's value
+            ratio = yDistance / xDistance;
+            for (let xCoord = 0; xCoord < xDistance; xCoord++) {
+                // 'dx' is positive if the starting point is to the left of 'to' and vice versa
+                const dx = start.x < to.x ? xCoord : -xCoord;
+                // the number of pixel on each column(on the x axis)
+                let pixNum;
+                if (rem >= 0.5) {
+                    pixNum = ratio - (1 - rem);
+                } else {
+                    pixNum = ratio + rem;
+                }
+                rem = getFraction(pixNum);
+
+                const toDraw = Math.round(pixNum);
+                if (toDraw === 0) {
+                    // if 'toDraw' equals 0, means we have to draw a pixel on the horizontal axis
+                    // to do this, it's position should be on the same 'y' coordinate
+                    drawn.push({ x: xPos + dx, y: yPos, color: state.color });
+                } else {
+                    // 'yCoord' is relative to the current position of 'y'(yPos)
+                    for (let yCoord = 0; yCoord < toDraw; yCoord++) {
+                        // 'dy' is positive if the starting point is above 'to' and vice versa
+                        const dy = start.y < to.y ? yCoord : -yCoord;
+                        drawn.push({
+                            x: xPos + dx,
+                            y: yPos + dy,
+                            color: state.color,
+                        });
+                    }
+                    // update the yPosition after drawing the pixels on a specific column(x axis)
+                    yPos += start.y < to.y ? toDraw : -toDraw;
+                }
             }
         }
         dispatch({ picture: state.picture.draw(drawn) });
