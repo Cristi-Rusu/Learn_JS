@@ -5,7 +5,7 @@ const { parse } = require('url');
 const { resolve: resolvePath, sep } = require('path');
 const { createReadStream, createWriteStream } = require('fs');
 const {
-    stat, readdir, rmdir, unlink,
+    stat, readdir, mkdir, rmdir, unlink,
 } = require('fs').promises;
 const mime = require('mime');
 
@@ -73,6 +73,11 @@ methods.DELETE = async function DELETE(request) {
 methods.PUT = async function PUT(request) {
     const path = urlPath(request.url);
     await pipeStream(request, createWriteStream(path));
+    return { status: 204 };
+};
+methods.MKCOL = async function MKCOL(request) {
+    const path = urlPath(request.url);
+    await mkdir(path);
     return { status: 204 };
 };
 
